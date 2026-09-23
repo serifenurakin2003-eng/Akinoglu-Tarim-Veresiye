@@ -1,0 +1,47 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model borclar {
+  borc_id    Int        @id @default(autoincrement())
+  musteri_id Int
+  tutar      Decimal    @db.Decimal(10, 2)
+  aciklama   String?    @db.VarChar(255)
+  tarih      DateTime?  @default(dbgenerated("CURRENT_DATE")) @db.Date
+  musteriler musteriler @relation(fields: [musteri_id], references: [musteri_id], onUpdate: NoAction, map: "fk_borc_musteri")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model musteriler {
+  musteri_id   Int           @id @default(autoincrement())
+  ad_soyad     String        @db.VarChar(100)
+  telefon      String?       @db.VarChar(20)
+  mahalle      String?       @db.VarChar(50)
+  kayit_tarihi DateTime?     @default(dbgenerated("CURRENT_DATE")) @db.Date
+  borclar      borclar[]
+  tahsilatlar  tahsilatlar[]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model tahsilatlar {
+  tahsilat_id  Int        @id @default(autoincrement())
+  musteri_id   Int
+  odenen_tutar Decimal    @db.Decimal(10, 2)
+  tarih        DateTime?  @default(dbgenerated("CURRENT_DATE")) @db.Date
+  musteriler   musteriler @relation(fields: [musteri_id], references: [musteri_id], onUpdate: NoAction, map: "fk_tahsilat_musteri")
+}
+
+model kullanicilar {
+  kullanici_id  Int       @id @default(autoincrement())
+  ad_soyad      String    @db.VarChar(100)
+  kullanici_adi String    @unique @db.VarChar(50)
+  sifre_hash    String    @db.VarChar(255)
+  kayit_tarihi  DateTime? @default(dbgenerated("CURRENT_DATE")) @db.Date
+}
+
