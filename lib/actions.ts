@@ -388,7 +388,7 @@ export async function deleteCustomer(musteri_id: number) {
 
 // 6b. Admin Şifre Doğrulama
 export async function verifyAdminPassword(password: string): Promise<{ ok: boolean }> {
-  const adminPassword = process.env.ADMIN_PASSWORD || "123456789";
+  const adminPassword = process.env.ADMIN_PASSWORD || "AkinAdmin*9841#";
   return { ok: password === adminPassword };
 }
 
