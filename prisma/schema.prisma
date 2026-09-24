@@ -9,12 +9,13 @@ datasource db {
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model borclar {
-  borc_id    Int        @id @default(autoincrement())
-  musteri_id Int
-  tutar      Decimal    @db.Decimal(10, 2)
-  aciklama   String?    @db.VarChar(255)
-  tarih      DateTime?  @default(dbgenerated("CURRENT_DATE")) @db.Date
-  musteriler musteriler @relation(fields: [musteri_id], references: [musteri_id], onUpdate: NoAction, map: "fk_borc_musteri")
+  borc_id        Int              @id @default(autoincrement())
+  musteri_id     Int
+  tutar          Decimal          @db.Decimal(10, 2)
+  aciklama       String?          @db.VarChar(255)
+  tarih          DateTime?        @default(dbgenerated("CURRENT_DATE")) @db.Date
+  musteriler     musteriler       @relation(fields: [musteri_id], references: [musteri_id], onUpdate: NoAction, map: "fk_borc_musteri")
+  borc_kalemleri borc_kalemleri[]
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -45,3 +46,28 @@ model kullanicilar {
   kayit_tarihi  DateTime? @default(dbgenerated("CURRENT_DATE")) @db.Date
 }
 
+model urunler {
+  urun_id          Int              @id @default(autoincrement())
+  kod              String           @unique @db.VarChar(50)
+  ad               String           @db.VarChar(150)
+  kategori         String?          @db.VarChar(50)
+  birim            String           @default("Adet") @db.VarChar(20)
+  fiyat            Decimal          @db.Decimal(10, 2)
+  aktif            Boolean          @default(true)
+  olusturma_tarihi DateTime?        @default(now()) @db.Timestamp(6)
+  borc_kalemleri   borc_kalemleri[]
+}
+
+model borc_kalemleri {
+  kalem_id     Int       @id @default(autoincrement())
+  borc_id      Int
+  urun_id      Int?
+  urun_kodu    String?   @db.VarChar(50)
+  urun_adi     String    @db.VarChar(150)
+  miktar       Decimal   @db.Decimal(10, 2)
+  birim        String?   @db.VarChar(20)
+  birim_fiyat  Decimal   @db.Decimal(10, 2)
+  toplam_fiyat Decimal   @db.Decimal(10, 2)
+  borclar      borclar   @relation(fields: [borc_id], references: [borc_id], onDelete: Cascade, map: "fk_kalem_borc")
+  urunler      urunler?  @relation(fields: [urun_id], references: [urun_id], onUpdate: SetNull, onDelete: SetNull, map: "fk_kalem_urun")
+}

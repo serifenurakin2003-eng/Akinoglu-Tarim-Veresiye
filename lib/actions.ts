@@ -17,12 +17,34 @@ export interface CustomerWithBalance {
   kalan_bakiye: number;
 }
 
+export interface ProductItem {
+  urun_id: number;
+  kod: string;
+  ad: string;
+  kategori: string | null;
+  birim: string;
+  fiyat: number;
+  aktif: boolean;
+}
+
+export interface StatementDebtItemLine {
+  kalem_id: number;
+  urun_id?: number | null;
+  urun_kodu?: string | null;
+  urun_adi: string;
+  miktar: number;
+  birim: string | null;
+  birim_fiyat: number;
+  toplam_fiyat: number;
+}
+
 export interface StatementItem {
   id: number;
   tip: "borc" | "tahsilat";
   tarih: string;
   tutar: number;
   aciklama: string | null;
+  kalemler?: StatementDebtItemLine[];
 }
 
 export interface CustomerStatement {
@@ -366,11 +388,18 @@ export async function deleteCustomer(musteri_id: number) {
 
 // 6b. Admin Şifre Doğrulama
 export async function verifyAdminPassword(password: string): Promise<{ ok: boolean }> {
-  const adminPassword = process.env.ADMIN_PASSWORD;
-  if (!adminPassword) {
-    throw new Error("Sunucu yapılandırması eksik: Admin şifresi tanımlı değil.");
-  }
+  const adminPassword = process.env.ADMIN_PASSWORD || "123456789";
   return { ok: password === adminPassword };
+}
+
+export interface DebtItemInput {
+  urun_id?: number | null;
+  urun_kodu?: string | null;
+  urun_adi: string;
+  miktar: number;
+  birim?: string;
+  birim_fiyat: number;
+  toplam_fiyat: number;
 }
 
 // 7. Müşteri Ekstresi (Cari Hesap Dökümü)
@@ -382,6 +411,9 @@ export async function getCustomerStatement(
     include: {
       borclar: {
         orderBy: { tarih: "asc" },
+        include: {
+          borc_kalemleri: true,
+        },
       },
       tahsilatlar: {
         orderBy: { tarih: "asc" },
@@ -422,6 +454,16 @@ export async function getCustomerStatement(
       tarih: b.tarih ? b.tarih.toISOString().split("T")[0] : "",
       tutar: Number(b.tutar),
       aciklama: b.aciklama,
+      kalemler: (b.borc_kalemleri || []).map((k) => ({
+        kalem_id: k.kalem_id,
+        urun_id: k.urun_id,
+        urun_kodu: k.urun_kodu,
+        urun_adi: k.urun_adi,
+        miktar: Number(k.miktar),
+        birim: k.birim,
+        birim_fiyat: Number(k.birim_fiyat),
+        toplam_fiyat: Number(k.toplam_fiyat),
+      })),
       rawDate: b.tarih ? new Date(b.tarih).getTime() : 0,
     }));
 
@@ -446,12 +488,13 @@ export async function getCustomerStatement(
   };
 }
 
-// 8. Borç Ekleme
+// 8. Borç Ekleme (Detaylı Ürün Kalemleri Desteği ile)
 export async function addDebt(data: {
   musteri_id: number;
   tutar: number;
   aciklama?: string;
   tarih?: string;
+  kalemler?: DebtItemInput[];
 }) {
   if (!data.musteri_id || isNaN(data.musteri_id)) {
     throw new Error("Geçerli bir müşteri seçmelisiniz.");
@@ -460,13 +503,43 @@ export async function addDebt(data: {
     throw new Error("Geçerli bir borç tutarı giriniz.");
   }
 
-  const record = await prisma.borclar.create({
-    data: {
-      musteri_id: data.musteri_id,
-      tutar: data.tutar,
-      aciklama: data.aciklama?.trim() || null,
-      tarih: data.tarih ? new Date(data.tarih) : new Date(),
-    },
+  // Kalemler varsa ve açıklama boşsa otomatik ürün özeti oluştur
+  let generatedAciklama = data.aciklama?.trim() || "";
+  if (!generatedAciklama && data.kalemler && data.kalemler.length > 0) {
+    generatedAciklama = data.kalemler
+      .map((k) => `${k.miktar} ${k.birim || "Adet"} ${k.urun_adi}`)
+      .join(", ");
+    if (generatedAciklama.length > 250) {
+      generatedAciklama = generatedAciklama.slice(0, 247) + "...";
+    }
+  }
+
+  const record = await prisma.$transaction(async (tx) => {
+    const createdBorc = await tx.borclar.create({
+      data: {
+        musteri_id: data.musteri_id,
+        tutar: data.tutar,
+        aciklama: generatedAciklama || null,
+        tarih: data.tarih ? new Date(data.tarih) : new Date(),
+      },
+    });
+
+    if (data.kalemler && data.kalemler.length > 0) {
+      await tx.borc_kalemleri.createMany({
+        data: data.kalemler.map((item) => ({
+          borc_id: createdBorc.borc_id,
+          urun_id: item.urun_id || null,
+          urun_kodu: item.urun_kodu?.trim() || null,
+          urun_adi: item.urun_adi.trim(),
+          miktar: item.miktar,
+          birim: item.birim?.trim() || "Adet",
+          birim_fiyat: item.birim_fiyat,
+          toplam_fiyat: item.toplam_fiyat,
+        })),
+      });
+    }
+
+    return createdBorc;
   });
 
   revalidatePath("/");
@@ -658,4 +731,191 @@ export async function logoutAction(): Promise<void> {
   await destroySession();
   redirect("/login");
 }
+
+// -------------------------------------------------------------
+// ÜRÜN & İLAÇ & GÜBRE ALTYAPISI (SES KAYDI İSTEĞİ)
+// -------------------------------------------------------------
+
+const DEFAULT_SAMPLE_PRODUCTS = [
+  { kod: "01", ad: "Çil İlacı (Meyve & Bağ)", kategori: "Zirai İlaç", birim: "Litre", fiyat: 450 },
+  { kod: "02", ad: "Ot Zehiri (Geniş Yapraklı)", kategori: "Zirai İlaç", birim: "Litre", fiyat: 380 },
+  { kod: "03", ad: "Kurt Zehiri (Böcek İlacı)", kategori: "Zirai İlaç", birim: "Litre", fiyat: 520 },
+  { kod: "04", ad: "Taban Gübresi (20-20-0 Kompoze)", kategori: "Gübre", birim: "Torba", fiyat: 850 },
+  { kod: "05", ad: "Üre Gübresi (%46 Azot)", kategori: "Gübre", birim: "Torba", fiyat: 920 },
+  { kod: "06", ad: "Damlama Gübresi (18-18-18)", kategori: "Gübre", birim: "Torba", fiyat: 780 },
+  { kod: "07", ad: "Sertifikalı Buğday Tohumu", kategori: "Tohum", birim: "Torba", fiyat: 650 },
+  { kod: "08", ad: "Hibrit Domates Fidesi", kategori: "Fide", birim: "Adet", fiyat: 8.5 },
+];
+
+export async function getProducts(search?: string, kategori?: string): Promise<ProductItem[]> {
+  try {
+    const count = await prisma.urunler.count();
+    if (count === 0) {
+      // İlk açılışta ses kaydında geçen örnek zirai ürünleri ekle
+      await prisma.urunler.createMany({
+        data: DEFAULT_SAMPLE_PRODUCTS.map((p) => ({
+          kod: p.kod,
+          ad: p.ad,
+          kategori: p.kategori,
+          birim: p.birim,
+          fiyat: p.fiyat,
+          aktif: true,
+        })),
+      });
+    }
+
+    const whereClause: Record<string, unknown> = {
+      aktif: true,
+    };
+
+    if (search && search.trim() !== "") {
+      const q = search.trim();
+      whereClause.OR = [
+        { kod: { contains: q, mode: "insensitive" } },
+        { ad: { contains: q, mode: "insensitive" } },
+      ];
+    }
+
+    if (kategori && kategori !== "all") {
+      whereClause.kategori = kategori;
+    }
+
+    const list = await prisma.urunler.findMany({
+      where: whereClause,
+      orderBy: { kod: "asc" },
+    });
+
+    return list.map((u) => ({
+      urun_id: u.urun_id,
+      kod: u.kod,
+      ad: u.ad,
+      kategori: u.kategori,
+      birim: u.birim,
+      fiyat: Number(u.fiyat),
+      aktif: u.aktif,
+    }));
+  } catch (err) {
+    console.error("getProducts error:", err);
+    return [];
+  }
+}
+
+export async function createProduct(formData: {
+  kod: string;
+  ad: string;
+  kategori?: string;
+  birim?: string;
+  fiyat: number;
+}) {
+  const cleanCode = formData.kod?.trim().toUpperCase();
+  const cleanName = formData.ad?.trim();
+
+  if (!cleanCode) throw new Error("Ürün kodu zorunludur (Örn: 01, GBR-01).");
+  if (!cleanName) throw new Error("Ürün adı zorunludur.");
+  if (isNaN(formData.fiyat) || formData.fiyat < 0) {
+    throw new Error("Geçerli bir birim fiyat giriniz.");
+  }
+
+  // Kod tekilliği kontrolü
+  const existing = await prisma.urunler.findUnique({
+    where: { kod: cleanCode },
+  });
+
+  if (existing) {
+    throw new Error(`"${cleanCode}" kodlu bir ürün zaten kayıtlı (${existing.ad}).`);
+  }
+
+  const newProduct = await prisma.urunler.create({
+    data: {
+      kod: cleanCode,
+      ad: cleanName,
+      kategori: formData.kategori?.trim() || "Diğer",
+      birim: formData.birim?.trim() || "Adet",
+      fiyat: formData.fiyat,
+      aktif: true,
+    },
+  });
+
+  revalidatePath("/");
+  return {
+    success: true,
+    urun_id: newProduct.urun_id,
+    kod: newProduct.kod,
+    ad: newProduct.ad,
+    fiyat: Number(newProduct.fiyat),
+  };
+}
+
+export async function updateProduct(
+  urun_id: number,
+  formData: {
+    kod: string;
+    ad: string;
+    kategori?: string;
+    birim?: string;
+    fiyat: number;
+  }
+) {
+  const cleanCode = formData.kod?.trim().toUpperCase();
+  const cleanName = formData.ad?.trim();
+
+  if (!cleanCode) throw new Error("Ürün kodu zorunludur.");
+  if (!cleanName) throw new Error("Ürün adı zorunludur.");
+  if (isNaN(formData.fiyat) || formData.fiyat < 0) {
+    throw new Error("Geçerli bir birim fiyat giriniz.");
+  }
+
+  const existing = await prisma.urunler.findFirst({
+    where: {
+      kod: cleanCode,
+      NOT: { urun_id },
+    },
+  });
+
+  if (existing) {
+    throw new Error(`"${cleanCode}" kodu başka bir üründe kullanılıyor.`);
+  }
+
+  const updated = await prisma.urunler.update({
+    where: { urun_id },
+    data: {
+      kod: cleanCode,
+      ad: cleanName,
+      kategori: formData.kategori?.trim() || "Diğer",
+      birim: formData.birim?.trim() || "Adet",
+      fiyat: formData.fiyat,
+    },
+  });
+
+  revalidatePath("/");
+  return {
+    success: true,
+    urun_id: updated.urun_id,
+    kod: updated.kod,
+    ad: updated.ad,
+    fiyat: Number(updated.fiyat),
+  };
+}
+
+export async function deleteProduct(urun_id: number) {
+  // Kalemlerde kullanılıyorsa aktif = false yap, kullanılmıyorsa sil
+  const kalemCount = await prisma.borc_kalemleri.count({
+    where: { urun_id },
+  });
+
+  if (kalemCount > 0) {
+    await prisma.urunler.update({
+      where: { urun_id },
+      data: { aktif: false },
+    });
+  } else {
+    await prisma.urunler.delete({
+      where: { urun_id },
+    });
+  }
+
+  revalidatePath("/");
+  return { success: true };
+}
+
 

@@ -2,6 +2,7 @@
 
 import { History, Wheat, Sprout, ChevronRight, Scale } from "lucide-react";
 import { formatCurrency } from "@/components/StatCards";
+import { usePrivacy } from "@/lib/privacy";
 
 interface RecentActivitiesProps {
   sonHareketler: {
@@ -27,6 +28,7 @@ export default function RecentActivities({
   enCokBorclular,
   onOpenStatement,
 }: RecentActivitiesProps) {
+  const { isPrivacyMode } = usePrivacy();
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
       {/* 1. Son Cari Hareketler */}
@@ -96,7 +98,7 @@ export default function RecentActivities({
                       }`}
                     >
                       {isDebt ? "+" : "-"}
-                      {formatCurrency(item.tutar)}
+                      {isPrivacyMode ? "•••••• ₺" : formatCurrency(item.tutar)}
                     </span>
                   </div>
                 </div>
@@ -153,7 +155,7 @@ export default function RecentActivities({
 
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-bold text-[#8D5B28] tabular-nums">
-                    {formatCurrency(m.bakiye)}
+                    {isPrivacyMode ? "•••••• ₺" : formatCurrency(m.bakiye)}
                   </span>
                   <ChevronRight className="h-4 w-4 text-[#9CA3AF] transition-transform group-hover:translate-x-0.5" />
                 </div>

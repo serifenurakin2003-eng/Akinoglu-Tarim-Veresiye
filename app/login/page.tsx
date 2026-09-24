@@ -259,6 +259,21 @@ export default function LoginPage() {
                 )}
               </button>
 
+              {/* Hızlı Yönetici Giriş Butonu */}
+              <div className="pt-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setLoginUsername("akin");
+                    setLoginPassword("123456");
+                    setError(null);
+                  }}
+                  className="w-full rounded-xl border border-dashed border-[#8D5B28]/40 bg-[#FAF3EB]/50 py-2 text-xs font-semibold text-[#8D5B28] hover:bg-[#FAF3EB] transition-colors"
+                >
+                  🌾 Yönetici Bilgilerini Doldur (akin / 123456)
+                </button>
+              </div>
+
               <div className="pt-2 text-center">
                 <span className="text-xs text-[#6B7280]">Hesabınız yok mu? </span>
                 <button

@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { CustomerWithBalance, deleteCustomer } from "@/lib/actions";
 import { formatCurrency } from "@/components/StatCards";
+import { usePrivacy } from "@/lib/privacy";
 
 interface CustomerTableProps {
   customers: CustomerWithBalance[];
@@ -38,6 +39,7 @@ export default function CustomerTable({
   onDataChanged,
   requirePassword,
 }: CustomerTableProps) {
+  const { isPrivacyMode } = usePrivacy();
   const [search, setSearch] = useState("");
   const [selectedNeighborhood, setSelectedNeighborhood] = useState("all");
   const [balanceFilter, setBalanceFilter] = useState<"all" | "debtors" | "clean">("all");
@@ -217,19 +219,19 @@ export default function CustomerTable({
 
                     {/* Toplam Borç */}
                     <td className="px-5 py-4 text-right font-bold text-[#8D5B28] tabular-nums text-sm">
-                      {formatCurrency(customer.toplam_borc)}
+                      {isPrivacyMode ? "•••••• ₺" : formatCurrency(customer.toplam_borc)}
                     </td>
 
                     {/* Toplam Tahsilat */}
                     <td className="px-5 py-4 text-right font-bold text-[#2D4C3A] tabular-nums text-sm">
-                      {formatCurrency(customer.toplam_tahsilat)}
+                      {isPrivacyMode ? "•••••• ₺" : formatCurrency(customer.toplam_tahsilat)}
                     </td>
 
                     {/* Kalan Net Bakiye & Smart Tag */}
                     <td className="px-6 py-4 text-right">
                       <div className="flex flex-col items-end gap-1">
                         <span className="text-base font-extrabold tabular-nums text-[#111827]">
-                          {formatCurrency(bakiye)}
+                          {isPrivacyMode ? "•••••• ₺" : formatCurrency(bakiye)}
                         </span>
                         {hasDebt ? (
                           <span className="inline-flex items-center rounded-full bg-[#FAF3EB] border border-[#E8DCCB] px-2.5 py-0.5 text-xs font-bold text-[#8D5B28]">
@@ -344,7 +346,7 @@ export default function CustomerTable({
 
                 <div className="text-right">
                   <div className="font-extrabold text-lg text-[#111827] tabular-nums">
-                    {formatCurrency(customer.kalan_bakiye)}
+                    {isPrivacyMode ? "•••••• ₺" : formatCurrency(customer.kalan_bakiye)}
                   </div>
                   <span
                     className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-bold border ${
@@ -363,13 +365,13 @@ export default function CustomerTable({
                 <div>
                   <span className="text-[#4B5563] font-medium">Toplam Borç: </span>
                   <span className="font-bold text-[#8D5B28] tabular-nums">
-                    {formatCurrency(customer.toplam_borc)}
+                    {isPrivacyMode ? "•••••• ₺" : formatCurrency(customer.toplam_borc)}
                   </span>
                 </div>
                 <div>
                   <span className="text-[#4B5563] font-medium">Tahsilat: </span>
                   <span className="font-bold text-[#2D4C3A] tabular-nums">
-                    {formatCurrency(customer.toplam_tahsilat)}
+                    {isPrivacyMode ? "•••••• ₺" : formatCurrency(customer.toplam_tahsilat)}
                   </span>
                 </div>
               </div>

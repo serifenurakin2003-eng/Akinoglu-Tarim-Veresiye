@@ -1,6 +1,7 @@
 "use client";
 
 import { Sprout, Wheat, Scale, Users } from "lucide-react";
+import { usePrivacy } from "@/lib/privacy";
 
 interface StatCardsProps {
   stats: {
@@ -22,6 +23,8 @@ export function formatCurrency(amount: number): string {
 }
 
 export default function StatCards({ stats }: StatCardsProps) {
+  const { isPrivacyMode, formatMasked } = usePrivacy();
+
   return (
     <div className="w-full rounded-2xl border border-[#E5E0D8] bg-white shadow-[0_1px_3px_rgba(0,0,0,0.03)]">
       <div className="grid grid-cols-1 divide-y divide-[#E5E0D8] sm:grid-cols-2 sm:divide-y-0 sm:divide-x lg:grid-cols-4">
@@ -37,7 +40,7 @@ export default function StatCards({ stats }: StatCardsProps) {
           </div>
           <div className="mt-3">
             <div className="text-3xl sm:text-4xl font-extrabold tracking-tight text-[#2D4C3A] tabular-nums">
-              {formatCurrency(stats.kalanAlacak)}
+              {isPrivacyMode ? "•••••• ₺" : formatCurrency(stats.kalanAlacak)}
             </div>
             <p className="mt-1 text-xs font-medium text-[#4B5563]">
               Tahsil edilmeyi bekleyen toplam bakiye
@@ -57,10 +60,10 @@ export default function StatCards({ stats }: StatCardsProps) {
           </div>
           <div className="mt-3">
             <div className="text-3xl sm:text-4xl font-extrabold tracking-tight text-[#8D5B28] tabular-nums">
-              {formatCurrency(stats.toplamBorc)}
+              {isPrivacyMode ? "•••••• ₺" : formatCurrency(stats.toplamBorc)}
             </div>
             <p className="mt-1 text-xs font-medium text-[#4B5563]">
-              Tohum, gübre, ilaç & fide vadeli kayıtlar
+              Tohum, gübre, ilaç &amp; fide vadeli kayıtlar
             </p>
           </div>
         </div>
@@ -77,7 +80,7 @@ export default function StatCards({ stats }: StatCardsProps) {
           </div>
           <div className="mt-3">
             <div className="text-3xl sm:text-4xl font-extrabold tracking-tight text-[#2D4C3A] tabular-nums">
-              {formatCurrency(stats.toplamTahsilat)}
+              {isPrivacyMode ? "•••••• ₺" : formatCurrency(stats.toplamTahsilat)}
             </div>
             <p className="mt-1 text-xs font-medium text-[#4B5563]">
               Alınan nakit ve banka ödemeleri
@@ -89,7 +92,7 @@ export default function StatCards({ stats }: StatCardsProps) {
         <div className="p-6 transition-colors hover:bg-[#FAF8F5]/60">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold uppercase tracking-wider text-[#4B5563]">
-              Kayıtlı Çiftçi & Müşteri
+              Kayıtlı Çiftçi &amp; Müşteri
             </span>
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#FAF8F5] text-[#2D4C3A] border border-[#E5E0D8]">
               <Users className="h-4 w-4" />
