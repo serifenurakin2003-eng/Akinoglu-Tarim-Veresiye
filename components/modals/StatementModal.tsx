@@ -140,13 +140,13 @@ export default function StatementModal({
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="font-serif-brand text-xl sm:text-2xl font-bold text-[#2D4C3A]">
-                  {statement?.musteri.ad_soyad || "Cari Hesap Ekstresi"}
+                  {statement?.musteri.ad_soyad || "Müşteri Bilgileri"}
                 </h3>
                 <span className="rounded-full bg-[#FAF3EB] border border-[#E8DCCB] px-2.5 py-0.5 text-xs font-bold text-[#8D5B28]">
-                  Müstahsil Cari Dökümü
+                  Müşteri Bilgileri &amp; Cari Kartı
                 </span>
               </div>
-              <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-[#6B776D]">
+              <div className="mt-1.5 flex flex-wrap items-center gap-3 text-xs text-[#6B776D]">
                 {statement?.musteri.telefon && (
                   <span className="flex items-center gap-1 font-semibold text-[#1F2922]">
                     <Phone className="h-3.5 w-3.5 text-[#6F8B67]" />
@@ -190,30 +190,38 @@ export default function StatementModal({
         {/* Bakiye Özeti ve Aksiyon Butonları */}
         {statement && (
           <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#EAE6DF] bg-[#FAF8F5] px-5 sm:px-6 py-3.5">
-            <div className="flex flex-wrap items-center gap-5 sm:gap-8">
-              <div>
-                <p className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-[#6B776D]">
-                  Toplam Borç
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 w-full lg:w-auto">
+              {/* 1. Toplam Borç */}
+              <div className="rounded-xl border border-[#E8DCCB] bg-[#FAF3EB]/50 p-2.5 sm:p-3">
+                <p className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-[#8D5B28]">
+                  Toplam Verilen Borç
                 </p>
-                <p className="font-serif-brand text-base sm:text-lg font-bold text-[#8D5B28] tabular-nums">
+                <p className="font-serif-brand text-lg sm:text-xl font-bold text-[#8D5B28] tabular-nums mt-0.5">
                   {isPrivacyMode ? "•••••• ₺" : formatCurrency(statement.musteri.toplam_borc)}
                 </p>
+                <p className="text-[10px] text-[#6B776D]">Aldığı ürünlerin toplamı</p>
               </div>
-              <div>
-                <p className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-[#6B776D]">
-                  Toplam Tahsilat
+
+              {/* 2. Müşterinin Verdiği / Ödediği Toplam Tutar */}
+              <div className="rounded-xl border border-[#D0E0D4] bg-[#EEF4F0] p-2.5 sm:p-3 shadow-xs">
+                <p className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-[#2D4C3A]">
+                  Müşterinin Verdiği (Tahsilat)
                 </p>
-                <p className="font-serif-brand text-base sm:text-lg font-bold text-[#2D4C3A] tabular-nums">
+                <p className="font-serif-brand text-lg sm:text-xl font-extrabold text-[#2D4C3A] tabular-nums mt-0.5">
                   {isPrivacyMode ? "•••••• ₺" : formatCurrency(statement.musteri.toplam_tahsilat)}
                 </p>
+                <p className="text-[10px] text-[#2D4C3A]/80 font-medium">Bugüne kadar yaptığı tüm ödemeler</p>
               </div>
-              <div className="border-l border-[#EAE6DF] pl-5 sm:pl-7">
-                <p className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-[#6B776D]">
-                  Kalan Net Bakiye
+
+              {/* 3. Kalan Net Bakiye */}
+              <div className="rounded-xl border border-[#EAE6DF] bg-white p-2.5 sm:p-3">
+                <p className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-[#1F2922]">
+                  Kalan Net Borç
                 </p>
-                <p className="font-serif-brand text-lg sm:text-2xl font-extrabold text-[#2D4C3A] tabular-nums">
+                <p className="font-serif-brand text-lg sm:text-xl font-extrabold text-[#1F2922] tabular-nums mt-0.5">
                   {isPrivacyMode ? "•••••• ₺" : formatCurrency(statement.musteri.kalan_bakiye)}
                 </p>
+                <p className="text-[10px] text-[#6B776D]">Açıkta kalan bakiye</p>
               </div>
             </div>
 

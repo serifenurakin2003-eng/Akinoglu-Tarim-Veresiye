@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import StatCards from "@/components/StatCards";
@@ -15,6 +15,7 @@ import {
   CustomerWithBalance,
   DashboardStats,
   ProductItem,
+  getDailyCollections,
 } from "@/lib/actions";
 import { PrivacyProvider } from "@/lib/privacy";
 
@@ -34,6 +35,69 @@ export default function DashboardClient({
   currentUser,
 }: DashboardClientProps) {
   const router = useRouter();
+
+  // Tarih ve Günlük Hasılat State'i
+  const todayStr =
+    initialStats.bugunTarih ||
+    new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Europe/Istanbul",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(new Date());
+
+  const [selectedDate, setSelectedDate] = useState<string>(todayStr);
+  const [customDailyData, setCustomDailyData] = useState<{
+    [date: string]: { revenue: number; count: number };
+  }>({});
+
+  // Seçili tarihin hasılatını hesapla
+  const { selectedRevenue, selectedCount } = useMemo(() => {
+    if (customDailyData[selectedDate]) {
+      return {
+        selectedRevenue: customDailyData[selectedDate].revenue,
+        selectedCount: customDailyData[selectedDate].count,
+      };
+    }
+    const found = initialStats.gunlukHasilatGecmisi?.find(
+      (d) => d.tarih === selectedDate
+    );
+    if (found) {
+      return {
+        selectedRevenue: found.toplamHasilat,
+        selectedCount: found.islemSayisi,
+      };
+    }
+    if (selectedDate === initialStats.bugunTarih) {
+      return {
+        selectedRevenue: initialStats.bugunHasilat || 0,
+        selectedCount: initialStats.bugunIslemSayisi || 0,
+      };
+    }
+    return { selectedRevenue: 0, selectedCount: 0 };
+  }, [selectedDate, initialStats, customDailyData]);
+
+  // Listede olmayan geçmiş bir tarih seçildiğinde sunucudan tahsilatları çek
+  useEffect(() => {
+    const inList = initialStats.gunlukHasilatGecmisi?.some(
+      (d) => d.tarih === selectedDate
+    );
+    if (
+      !inList &&
+      selectedDate !== initialStats.bugunTarih &&
+      !customDailyData[selectedDate]
+    ) {
+      getDailyCollections(selectedDate)
+        .then((items) => {
+          const total = items.reduce((sum, item) => sum + item.odenen_tutar, 0);
+          setCustomDailyData((prev) => ({
+            ...prev,
+            [selectedDate]: { revenue: total, count: items.length },
+          }));
+        })
+        .catch(() => {});
+    }
+  }, [selectedDate, initialStats, customDailyData]);
 
   // Modal States
   const [customerModalOpen, setCustomerModalOpen] = useState(false);
@@ -111,7 +175,7 @@ export default function DashboardClient({
     });
   }
 
-  // Ekstre — şifresiz açılıyor (sadece görüntüleme)
+  // Müşteri Bilgileri & Ekstre — şifresiz açılıyor (sadece görüntüleme)
   function handleOpenStatement(customerId: number) {
     setStatementCustomerId(customerId);
     setStatementModalOpen(true);
@@ -135,15 +199,27 @@ export default function DashboardClient({
         />
 
         <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 space-y-8">
-          {/* 1. Stat Flow Section */}
+          {/* 1. Stat Flow Section (Tarih Tarih Hasılat ve Toplam Borç) */}
           <section>
-            <StatCards stats={initialStats} />
+            <StatCards
+              stats={initialStats}
+              selectedDate={selectedDate}
+              selectedRevenue={selectedRevenue}
+              selectedCount={selectedCount}
+              todayStr={todayStr}
+              onSelectDate={setSelectedDate}
+            />
           </section>
 
-          {/* 2. Recent Ledger Stream & Top Debtors */}
+          {/* 2. Günlük Hasılat & Kasa Akışı (Tarih Tarih) ve Açık Hesaplar */}
           <section>
             <RecentActivities
-              sonHareketler={initialStats.sonHareketler}
+              dailyRevenues={initialStats.gunlukHasilatGecmisi || []}
+              selectedDate={selectedDate}
+              selectedRevenue={selectedRevenue}
+              selectedCount={selectedCount}
+              todayStr={todayStr}
+              onSelectDate={setSelectedDate}
               enCokBorclular={initialStats.enCokBorclular}
               onOpenStatement={handleOpenStatement}
             />

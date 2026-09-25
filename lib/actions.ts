@@ -52,12 +52,30 @@ export interface CustomerStatement {
   hareketler: StatementItem[];
 }
 
+export interface DailyRevenueItem {
+  tarih: string; // YYYY-MM-DD
+  toplamHasilat: number;
+  islemSayisi: number;
+}
+
+export interface DayCollectionDetail {
+  tahsilat_id: number;
+  musteri_id: number;
+  musteri_ad: string;
+  odenen_tutar: number;
+  tarih: string;
+}
+
 export interface DashboardStats {
   toplamBorc: number;
   toplamTahsilat: number;
   kalanAlacak: number;
   toplamMusteriSayisi: number;
   borcluMusteriSayisi: number;
+  bugunTarih: string;
+  bugunHasilat: number;
+  bugunIslemSayisi: number;
+  gunlukHasilatGecmisi: DailyRevenueItem[];
   sonHareketler: {
     id: string;
     musteri_id: number;
@@ -77,7 +95,7 @@ export interface DashboardStats {
 
 // 1. Dashboard İstatistikleri
 export async function getDashboardStats(): Promise<DashboardStats> {
-  const [musterilerList, borclarList, tahsilatlarList] = await Promise.all([
+  const [musterilerList, borclarList, tahsilatlarList, tumTahsilatlar] = await Promise.all([
     prisma.musteriler.findMany({
       include: {
         borclar: true,
@@ -100,6 +118,14 @@ export async function getDashboardStats(): Promise<DashboardStats> {
         musteriler: {
           select: { ad_soyad: true },
         },
+      },
+    }),
+    prisma.tahsilatlar.findMany({
+      orderBy: { tarih: "desc" },
+      select: {
+        tahsilat_id: true,
+        odenen_tutar: true,
+        tarih: true,
       },
     }),
   ]);
@@ -139,6 +165,38 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     .sort((a, b) => b.bakiye - a.bakiye)
     .slice(0, 5);
 
+  // Günlük hasılat geçmişi hesaplama (Tarih bazında gruplama)
+  const gunlukMap = new Map<string, { toplamHasilat: number; islemSayisi: number }>();
+  for (const t of tumTahsilatlar) {
+    const dStr = t.tarih ? t.tarih.toISOString().split("T")[0] : "";
+    if (!dStr) continue;
+    const item = gunlukMap.get(dStr) || { toplamHasilat: 0, islemSayisi: 0 };
+    item.toplamHasilat += Number(t.odenen_tutar || 0);
+    item.islemSayisi += 1;
+    gunlukMap.set(dStr, item);
+  }
+
+  const gunlukHasilatGecmisi: DailyRevenueItem[] = Array.from(gunlukMap.entries())
+    .map(([tarih, data]) => ({
+      tarih,
+      toplamHasilat: data.toplamHasilat,
+      islemSayisi: data.islemSayisi,
+    }))
+    .sort((a, b) => b.tarih.localeCompare(a.tarih));
+
+  // Türkiye saatine göre bugünün tarihi (YYYY-MM-DD)
+  const now = new Date();
+  const bugunTarih = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/Istanbul",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(now);
+
+  const bugunData = gunlukMap.get(bugunTarih);
+  const bugunHasilat = bugunData?.toplamHasilat || 0;
+  const bugunIslemSayisi = bugunData?.islemSayisi || 0;
+
   // Son hareketleri birleştir ve sırala
   const sonBorclar = borclarList.map((b) => ({
     id: `b-${b.borc_id}`,
@@ -173,6 +231,10 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     kalanAlacak: toplamBorc - toplamTahsilat,
     toplamMusteriSayisi: musterilerList.length,
     borcluMusteriSayisi,
+    bugunTarih,
+    bugunHasilat,
+    bugunIslemSayisi,
+    gunlukHasilatGecmisi,
     sonHareketler,
     enCokBorclular,
   };
@@ -917,5 +979,33 @@ export async function deleteProduct(urun_id: number) {
   revalidatePath("/");
   return { success: true };
 }
+
+// 17. Belirli Bir Tarihe Ait Tahsilat Listesini Getirme
+export async function getDailyCollections(tarihStr: string): Promise<DayCollectionDetail[]> {
+  if (!tarihStr) return [];
+
+  const list = await prisma.tahsilatlar.findMany({
+    orderBy: { tahsilat_id: "desc" },
+    include: {
+      musteriler: {
+        select: { ad_soyad: true },
+      },
+    },
+  });
+
+  return list
+    .filter((t) => {
+      const dStr = t.tarih ? t.tarih.toISOString().split("T")[0] : "";
+      return dStr === tarihStr;
+    })
+    .map((t) => ({
+      tahsilat_id: t.tahsilat_id,
+      musteri_id: t.musteri_id,
+      musteri_ad: t.musteriler?.ad_soyad || "Bilinmiyor",
+      odenen_tutar: Number(t.odenen_tutar),
+      tarih: tarihStr,
+    }));
+}
+
 
 

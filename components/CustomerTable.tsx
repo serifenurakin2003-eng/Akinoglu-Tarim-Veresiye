@@ -156,15 +156,14 @@ export default function CustomerTable({
               <th className="px-6 py-4">Müstahsil / Çiftçi</th>
               <th className="px-5 py-4">İletişim & Konum</th>
               <th className="px-5 py-4 text-right">Toplam Borç</th>
-              <th className="px-5 py-4 text-right">Toplam Tahsilat</th>
               <th className="px-6 py-4 text-right">Kalan Net Bakiye</th>
-              <th className="px-6 py-4 text-center">Hızlı İşlemler</th>
+              <th className="px-6 py-4 text-center">Müşteri Bilgileri &amp; İşlemler</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[#E5E0D8]">
             {filteredCustomers.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-6 py-14 text-center text-[#4B5563]">
+                <td colSpan={5} className="px-6 py-14 text-center text-[#4B5563]">
                   <Users className="mx-auto h-8 w-8 text-[#9CA3AF]" />
                   <p className="mt-2 text-sm font-semibold">
                     Arama kriterine uygun cari kayıt bulunamadı.
@@ -182,16 +181,22 @@ export default function CustomerTable({
                     key={customer.musteri_id}
                     className="hover:bg-[#F3EFEA] transition-colors"
                   >
-                    {/* Müstahsil Adı */}
+                    {/* Müstahsil Adı (Tıklanabilir - Müşteri Bilgilerini Açar) */}
                     <td className="px-6 py-4">
-                      <div className="text-base font-bold text-[#111827]">
-                        {customer.ad_soyad}
-                      </div>
-                      {customer.kayit_tarihi && (
-                        <div className="text-xs font-medium text-[#6B7280]">
-                          Kayıt: {customer.kayit_tarihi}
+                      <button
+                        onClick={() => onOpenStatement(customer.musteri_id)}
+                        className="text-left group cursor-pointer"
+                        title="Müşteri Bilgilerini ve Cari Geçmişini Görüntüle"
+                      >
+                        <div className="text-base font-bold text-[#111827] group-hover:text-[#2D4C3A] transition-colors underline-offset-2 group-hover:underline">
+                          {customer.ad_soyad}
                         </div>
-                      )}
+                        {customer.kayit_tarihi && (
+                          <div className="text-xs font-medium text-[#6B7280]">
+                            Kayıt: {customer.kayit_tarihi}
+                          </div>
+                        )}
+                      </button>
                     </td>
 
                     {/* İletişim / Köy */}
@@ -222,11 +227,6 @@ export default function CustomerTable({
                       {isPrivacyMode ? "•••••• ₺" : formatCurrency(customer.toplam_borc)}
                     </td>
 
-                    {/* Toplam Tahsilat */}
-                    <td className="px-5 py-4 text-right font-bold text-[#2D4C3A] tabular-nums text-sm">
-                      {isPrivacyMode ? "•••••• ₺" : formatCurrency(customer.toplam_tahsilat)}
-                    </td>
-
                     {/* Kalan Net Bakiye & Smart Tag */}
                     <td className="px-6 py-4 text-right">
                       <div className="flex flex-col items-end gap-1">
@@ -254,11 +254,11 @@ export default function CustomerTable({
                       <div className="inline-flex items-center gap-2">
                         <button
                           onClick={() => onOpenStatement(customer.musteri_id)}
-                          title="Cari Hesap Ekstresi"
-                          className="inline-flex items-center gap-1 rounded-full border border-[#D1D5DB] bg-white px-3 py-1.5 text-xs font-semibold text-[#1F2937] hover:border-[#2D4C3A] hover:bg-[#FAF8F5] hover:text-[#2D4C3A] transition"
+                          title="Müşteri Bilgileri, Ödemeleri ve Cari Ekstresi"
+                          className="inline-flex items-center gap-1.5 rounded-full border border-[#2D4C3A] bg-[#EEF4F0] px-3.5 py-1.5 text-xs font-bold text-[#2D4C3A] hover:bg-[#2D4C3A] hover:text-white transition-all shadow-xs"
                         >
-                          <FileSpreadsheet className="h-3.5 w-3.5 text-[#2D4C3A]" />
-                          <span>Ekstre</span>
+                          <FileSpreadsheet className="h-3.5 w-3.5" />
+                          <span>Müşteri Bilgileri</span>
                         </button>
 
                         <button
@@ -325,7 +325,10 @@ export default function CustomerTable({
             <div key={customer.musteri_id} className="p-4 space-y-3">
               <div className="flex items-start justify-between">
                 <div>
-                  <h4 className="text-lg font-bold text-[#111827]">
+                  <h4
+                    onClick={() => onOpenStatement(customer.musteri_id)}
+                    className="text-lg font-bold text-[#111827] cursor-pointer active:text-[#2D4C3A]"
+                  >
                     {customer.ad_soyad}
                   </h4>
                   <div className="flex items-center gap-2 mt-0.5 text-xs font-medium text-[#4B5563]">
@@ -360,30 +363,22 @@ export default function CustomerTable({
                 </div>
               </div>
 
-              {/* Debt / Collection Summary */}
+              {/* Debt Summary (Tahsilat burada gösterilmez, Müşteri Bilgileri modalında detaylıca yazar) */}
               <div className="flex items-center justify-between text-xs bg-[#FAF8F5] p-3 rounded-xl border border-[#E5E0D8]">
-                <div>
-                  <span className="text-[#4B5563] font-medium">Toplam Borç: </span>
-                  <span className="font-bold text-[#8D5B28] tabular-nums">
-                    {isPrivacyMode ? "•••••• ₺" : formatCurrency(customer.toplam_borc)}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-[#4B5563] font-medium">Tahsilat: </span>
-                  <span className="font-bold text-[#2D4C3A] tabular-nums">
-                    {isPrivacyMode ? "•••••• ₺" : formatCurrency(customer.toplam_tahsilat)}
-                  </span>
-                </div>
+                <span className="text-[#4B5563] font-medium">Toplam Açık Borç Kaydı:</span>
+                <span className="font-bold text-[#8D5B28] tabular-nums text-sm">
+                  {isPrivacyMode ? "•••••• ₺" : formatCurrency(customer.toplam_borc)}
+                </span>
               </div>
 
               {/* Action Buttons */}
               <div className="flex items-center justify-between pt-1">
                 <button
                   onClick={() => onOpenStatement(customer.musteri_id)}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-[#D1D5DB] bg-white px-3.5 py-1.5 text-xs font-semibold text-[#1F2937]"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-[#2D4C3A] bg-[#EEF4F0] px-3.5 py-1.5 text-xs font-bold text-[#2D4C3A]"
                 >
-                  <FileSpreadsheet className="h-3.5 w-3.5 text-[#2D4C3A]" />
-                  Ekstre
+                  <FileSpreadsheet className="h-3.5 w-3.5" />
+                  Müşteri Bilgileri
                 </button>
 
                 <div className="flex items-center gap-2">
