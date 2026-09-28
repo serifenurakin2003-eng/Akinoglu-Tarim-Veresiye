@@ -11,6 +11,7 @@ import TransactionModal from "@/components/modals/TransactionModal";
 import StatementModal from "@/components/modals/StatementModal";
 import PasswordModal from "@/components/modals/PasswordModal";
 import ProductCatalogModal from "@/components/modals/ProductCatalogModal";
+import FirmaDebtModal from "@/components/modals/FirmaDebtModal";
 import {
   CustomerWithBalance,
   DashboardStats,
@@ -116,8 +117,10 @@ export default function DashboardClient({
   );
 
   const [productCatalogOpen, setProductCatalogOpen] = useState(false);
+  const [firmaDebtOpen, setFirmaDebtOpen] = useState(false);
 
-  // Şifre Modal State
+  // Şifre Modal State (sadece login'de kullanılıyor, burada tutmaya devam ediyoruz
+  // ama işlem şifrelerini kaldırdık — şifre yalnızca ilk girişte sorulacak)
   const [passwordModalOpen, setPasswordModalOpen] = useState(false);
   const [passwordActionLabel, setPasswordActionLabel] = useState("");
   const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
@@ -126,7 +129,7 @@ export default function DashboardClient({
     router.refresh();
   }
 
-  /** Herhangi bir yazma işleminden önce şifre modal'ını aç */
+  /** Şifre koruması — artık sadece kritik silme işlemleri için kullanılıyor */
   function requirePassword(label: string, action: () => void) {
     setPasswordActionLabel(label);
     setPendingAction(() => action);
@@ -144,35 +147,27 @@ export default function DashboardClient({
     setPendingAction(null);
   }
 
-  // Navbar handlers — şifre korumalı
+  // Navbar handlers — artık şifresiz doğrudan açılıyor
   function handleOpenNewCustomer() {
-    requirePassword("Yeni Müşteri Ekle", () => {
-      setEditingCustomer(null);
-      setCustomerModalOpen(true);
-    });
+    setEditingCustomer(null);
+    setCustomerModalOpen(true);
   }
 
   function handleOpenNewDebt(customerId?: number) {
-    requirePassword("Borç Yaz", () => {
-      setTransactionType("borc");
-      setPreSelectedCustomerId(customerId ?? null);
-      setTransactionModalOpen(true);
-    });
+    setTransactionType("borc");
+    setPreSelectedCustomerId(customerId ?? null);
+    setTransactionModalOpen(true);
   }
 
   function handleOpenNewPayment(customerId?: number) {
-    requirePassword("Tahsilat Al", () => {
-      setTransactionType("tahsilat");
-      setPreSelectedCustomerId(customerId ?? null);
-      setTransactionModalOpen(true);
-    });
+    setTransactionType("tahsilat");
+    setPreSelectedCustomerId(customerId ?? null);
+    setTransactionModalOpen(true);
   }
 
   function handleEditCustomer(customer: CustomerWithBalance) {
-    requirePassword("Müşteri Düzenle", () => {
-      setEditingCustomer(customer);
-      setCustomerModalOpen(true);
-    });
+    setEditingCustomer(customer);
+    setCustomerModalOpen(true);
   }
 
   // Müşteri Bilgileri & Ekstre — şifresiz açılıyor (sadece görüntüleme)
@@ -195,11 +190,12 @@ export default function DashboardClient({
           onOpenNewDebt={() => handleOpenNewDebt()}
           onOpenNewPayment={() => handleOpenNewPayment()}
           onOpenProductCatalog={handleOpenProductCatalog}
+          onOpenFirmaDebt={() => setFirmaDebtOpen(true)}
           currentUser={currentUser}
         />
 
         <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 space-y-8">
-          {/* 1. Stat Flow Section (Tarih Tarih Hasılat ve Toplam Borç) */}
+          {/* 1. Stat Flow Section */}
           <section>
             <StatCards
               stats={initialStats}
@@ -211,7 +207,7 @@ export default function DashboardClient({
             />
           </section>
 
-          {/* 2. Günlük Hasılat & Kasa Akışı (Tarih Tarih) ve Açık Hesaplar */}
+          {/* 2. Günlük Hasılat & Kasa Akışı */}
           <section>
             <RecentActivities
               dailyRevenues={initialStats.gunlukHasilatGecmisi || []}
@@ -291,6 +287,11 @@ export default function DashboardClient({
           onClose={() => setProductCatalogOpen(false)}
           onProductsChanged={handleDataChanged}
           requirePassword={requirePassword}
+        />
+
+        <FirmaDebtModal
+          isOpen={firmaDebtOpen}
+          onClose={() => setFirmaDebtOpen(false)}
         />
       </div>
     </PrivacyProvider>

@@ -10,6 +10,7 @@ import {
   Package,
   Eye,
   EyeOff,
+  Building2,
 } from "lucide-react";
 import { logoutAction } from "@/lib/actions";
 import { usePrivacy } from "@/lib/privacy";
@@ -19,6 +20,7 @@ interface NavbarProps {
   onOpenNewDebt: () => void;
   onOpenNewPayment: () => void;
   onOpenProductCatalog: () => void;
+  onOpenFirmaDebt: () => void;
   currentUser?: { name?: string; username?: string } | null;
 }
 
@@ -27,6 +29,7 @@ export default function Navbar({
   onOpenNewDebt,
   onOpenNewPayment,
   onOpenProductCatalog,
+  onOpenFirmaDebt,
   currentUser,
 }: NavbarProps) {
   const { isPrivacyMode, togglePrivacyMode } = usePrivacy();
@@ -105,6 +108,17 @@ export default function Navbar({
             <Package className="h-4 w-4 text-[#8D5B28] transition-transform group-hover:scale-110" />
             <span className="hidden lg:inline">Ürün &amp; Fiyatlar</span>
             <span className="lg:hidden">Ürünler</span>
+          </button>
+
+          {/* Firma Borçları */}
+          <button
+            onClick={onOpenFirmaDebt}
+            type="button"
+            title="Firmanın Kendi Borçları (Tedarikçiye Ödenecekler)"
+            className="group inline-flex items-center gap-1.5 rounded-full border border-[#D1D5DB] bg-white px-3 sm:px-3.5 py-1.5 text-xs sm:text-sm font-semibold text-[#1F2937] transition hover:border-[#8D5B28] hover:bg-[#FAF3EB] hover:text-[#8D5B28]"
+          >
+            <Building2 className="h-4 w-4 text-[#8D5B28] transition-transform group-hover:scale-110" />
+            <span className="hidden lg:inline">Firma Borçları</span>
           </button>
 
           {/* Yeni Müşteri */}

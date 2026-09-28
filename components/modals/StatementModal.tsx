@@ -34,7 +34,7 @@ interface StatementModalProps {
   onOpenDebt: (customerId: number) => void;
   onOpenPayment: (customerId: number) => void;
   onDataChanged: () => void;
-  requirePassword: (label: string, action: () => void) => void;
+  requirePassword?: (label: string, action: () => void) => void;
 }
 
 export default function StatementModal({
@@ -99,27 +99,24 @@ export default function StatementModal({
     if (deletingKey !== null) return;
     const isDebt = item.tip === "borc";
     const itemKey = `${item.tip}-${item.id}`;
-    const actionLabel = isDebt ? "Borç Kaydını Sil" : "Tahsilat Kaydını Sil";
     const confirmMsg = isDebt
       ? "Bu vadeli borç kaydını ve bağlı tüm ürün kalemlerini silmek istediğinize emin misiniz?"
       : "Bu tahsilat kaydını silmek istediğinize emin misiniz?";
 
-    requirePassword(actionLabel, () => {
-      if (!confirm(confirmMsg)) return;
-      setDeletingKey(itemKey);
-      const deletePromise = isDebt ? deleteDebt(item.id) : deleteCollection(item.id);
-      deletePromise
-        .then(() => {
-          onDataChanged();
-          if (customerId) loadStatement(customerId);
-        })
-        .catch((err: unknown) => {
-          alert(err instanceof Error ? err.message : "Kayıt silinirken bir hata oluştu.");
-        })
-        .finally(() => {
-          setDeletingKey(null);
-        });
-    });
+    if (!confirm(confirmMsg)) return;
+    setDeletingKey(itemKey);
+    const deletePromise = isDebt ? deleteDebt(item.id) : deleteCollection(item.id);
+    deletePromise
+      .then(() => {
+        onDataChanged();
+        if (customerId) loadStatement(customerId);
+      })
+      .catch((err: unknown) => {
+        alert(err instanceof Error ? err.message : "Kayıt silinirken bir hata oluştu.");
+      })
+      .finally(() => {
+        setDeletingKey(null);
+      });
   }
 
   function handlePrint() {
@@ -228,10 +225,8 @@ export default function StatementModal({
             <div className="flex items-center gap-2">
               <button
                 onClick={() => {
-                  requirePassword("Borç Yaz", () => {
-                    onClose();
-                    onOpenDebt(statement.musteri.musteri_id);
-                  });
+                  onClose();
+                  onOpenDebt(statement.musteri.musteri_id);
                 }}
                 className="inline-flex items-center gap-1.5 rounded-full border border-[#8D5B28] bg-[#8D5B28] px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-[#72481F] transition"
               >
@@ -240,10 +235,8 @@ export default function StatementModal({
               </button>
               <button
                 onClick={() => {
-                  requirePassword("Tahsilat Al", () => {
-                    onClose();
-                    onOpenPayment(statement.musteri.musteri_id);
-                  });
+                  onClose();
+                  onOpenPayment(statement.musteri.musteri_id);
                 }}
                 className="inline-flex items-center gap-1.5 rounded-full border border-[#2D4C3A] bg-[#2D4C3A] px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-[#1E3427] transition"
               >

@@ -1009,3 +1009,88 @@ export async function getDailyCollections(tarihStr: string): Promise<DayCollecti
 
 
 
+
+// ---------------------------------------------------------------
+// FİRMA BORÇLARI (Firmanın Tedarikçilere / Dışarıya Borçları)
+// ---------------------------------------------------------------
+
+export interface FirmaBorc {
+  id: number;
+  alacakli: string;
+  tutar: number;
+  aciklama: string | null;
+  tarih: string;
+  odendi: boolean;
+}
+
+async function ensureFirmaBorcTable() {
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS firma_borclari (
+      id SERIAL PRIMARY KEY,
+      alacakli VARCHAR(200) NOT NULL,
+      tutar DECIMAL(12,2) NOT NULL,
+      aciklama VARCHAR(500),
+      tarih DATE DEFAULT CURRENT_DATE,
+      odendi BOOLEAN DEFAULT FALSE,
+      olusturma_tarihi TIMESTAMP DEFAULT NOW()
+    );
+  `);
+}
+
+export async function getFirmaBorclar(): Promise<FirmaBorc[]> {
+  try {
+    await ensureFirmaBorcTable();
+    const rows = await prisma.$queryRawUnsafe<any[]>(
+      `SELECT id, alacakli, tutar::float8 as tutar, aciklama, tarih::text, odendi
+       FROM firma_borclari ORDER BY odendi ASC, tarih DESC, id DESC`
+    );
+    return rows.map((r) => ({
+      id: r.id,
+      alacakli: r.alacakli,
+      tutar: Number(r.tutar),
+      aciklama: r.aciklama,
+      tarih: r.tarih ? r.tarih.slice(0, 10) : "",
+      odendi: r.odendi,
+    }));
+  } catch (err) {
+    console.error("getFirmaBorclar error:", err);
+    return [];
+  }
+}
+
+export async function addFirmaBorc(data: {
+  alacakli: string;
+  tutar: number;
+  aciklama?: string;
+  tarih?: string;
+}): Promise<{ success: boolean }> {
+  if (!data.alacakli?.trim()) throw new Error("Alacakli adi zorunludur.");
+  if (!data.tutar || data.tutar <= 0) throw new Error("Gecerli bir tutar giriniz.");
+  await ensureFirmaBorcTable();
+  await prisma.$executeRawUnsafe(
+    `INSERT INTO firma_borclari (alacakli, tutar, aciklama, tarih) VALUES ($1, $2, $3, $4)`,
+    data.alacakli.trim(),
+    data.tutar,
+    data.aciklama?.trim() || null,
+    data.tarih ? new Date(data.tarih) : new Date()
+  );
+  revalidatePath("/");
+  return { success: true };
+}
+
+export async function toggleFirmaBorcOdendi(id: number): Promise<{ success: boolean }> {
+  await ensureFirmaBorcTable();
+  await prisma.$executeRawUnsafe(
+    `UPDATE firma_borclari SET odendi = NOT odendi WHERE id = $1`,
+    id
+  );
+  revalidatePath("/");
+  return { success: true };
+}
+
+export async function deleteFirmaBorc(id: number): Promise<{ success: boolean }> {
+  await ensureFirmaBorcTable();
+  await prisma.$executeRawUnsafe(`DELETE FROM firma_borclari WHERE id = $1`, id);
+  revalidatePath("/");
+  return { success: true };
+}
