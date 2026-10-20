@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Users } from "lucide-react";
 import Navbar from "@/components/Navbar";
-import StatCards from "@/components/StatCards";
-import RecentActivities from "@/components/RecentActivities";
 import CustomerModal from "@/components/modals/CustomerModal";
 import TransactionModal from "@/components/modals/TransactionModal";
 import StatementModal from "@/components/modals/StatementModal";
@@ -13,89 +13,21 @@ import ProductCatalogModal from "@/components/modals/ProductCatalogModal";
 import FirmaDebtModal from "@/components/modals/FirmaDebtModal";
 import {
   CustomerWithBalance,
-  DashboardStats,
   ProductItem,
-  getDailyCollections,
 } from "@/lib/actions";
-import { PrivacyProvider } from "@/lib/privacy";
 
 interface DashboardClientProps {
-  initialStats: DashboardStats;
   initialCustomers: CustomerWithBalance[];
   initialProducts?: ProductItem[];
   currentUser?: { name?: string; username?: string } | null;
 }
 
 export default function DashboardClient({
-  initialStats,
   initialCustomers,
   initialProducts = [],
   currentUser,
 }: DashboardClientProps) {
   const router = useRouter();
-
-  // Tarih ve Günlük Hasılat State'i
-  const todayStr =
-    initialStats.bugunTarih ||
-    new Intl.DateTimeFormat("en-CA", {
-      timeZone: "Europe/Istanbul",
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-    }).format(new Date());
-
-  const [selectedDate, setSelectedDate] = useState<string>(todayStr);
-  const [customDailyData, setCustomDailyData] = useState<{
-    [date: string]: { revenue: number; count: number };
-  }>({});
-
-  // Seçili tarihin hasılatını hesapla
-  const { selectedRevenue, selectedCount } = useMemo(() => {
-    if (customDailyData[selectedDate]) {
-      return {
-        selectedRevenue: customDailyData[selectedDate].revenue,
-        selectedCount: customDailyData[selectedDate].count,
-      };
-    }
-    const found = initialStats.gunlukHasilatGecmisi?.find(
-      (d) => d.tarih === selectedDate
-    );
-    if (found) {
-      return {
-        selectedRevenue: found.toplamHasilat,
-        selectedCount: found.islemSayisi,
-      };
-    }
-    if (selectedDate === initialStats.bugunTarih) {
-      return {
-        selectedRevenue: initialStats.bugunHasilat || 0,
-        selectedCount: initialStats.bugunIslemSayisi || 0,
-      };
-    }
-    return { selectedRevenue: 0, selectedCount: 0 };
-  }, [selectedDate, initialStats, customDailyData]);
-
-  // Listede olmayan geçmiş bir tarih seçildiğinde sunucudan tahsilatları çek
-  useEffect(() => {
-    const inList = initialStats.gunlukHasilatGecmisi?.some(
-      (d) => d.tarih === selectedDate
-    );
-    if (
-      !inList &&
-      selectedDate !== initialStats.bugunTarih &&
-      !customDailyData[selectedDate]
-    ) {
-      getDailyCollections(selectedDate)
-        .then((items) => {
-          const total = items.reduce((sum, item) => sum + item.odenen_tutar, 0);
-          setCustomDailyData((prev) => ({
-            ...prev,
-            [selectedDate]: { revenue: total, count: items.length },
-          }));
-        })
-        .catch(() => {});
-    }
-  }, [selectedDate, initialStats, customDailyData]);
 
   // Modal States
   const [customerModalOpen, setCustomerModalOpen] = useState(false);
@@ -171,7 +103,6 @@ export default function DashboardClient({
   }
 
   return (
-    <PrivacyProvider>
       <div className="min-h-screen bg-[#FAF8F5] text-[#1F2922]">
         {/* Top Navbar */}
         <Navbar
@@ -184,32 +115,53 @@ export default function DashboardClient({
         />
 
         <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 space-y-8">
-          {/* 1. Stat Flow Section */}
-          <section>
-            <StatCards
-              stats={initialStats}
-              selectedDate={selectedDate}
-              selectedRevenue={selectedRevenue}
-              selectedCount={selectedCount}
-              todayStr={todayStr}
-              onSelectDate={setSelectedDate}
-            />
-          </section>
+          <Link
+            href="/musteriler"
+            className="block max-w-xl rounded-2xl border border-[#E5E0D8] bg-white p-6 shadow-[0_1px_3px_rgba(0,0,0,0.03)] transition hover:border-[#2D4C3A]/40 hover:shadow-md"
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wider text-[#4B5563]">
+                  Kayıtlı çiftçi &amp; müşteri
+                </p>
+                <div className="mt-3 flex items-baseline gap-2">
+                  <span className="text-4xl font-extrabold tracking-tight text-[#111827] tabular-nums">
+                    {initialCustomers.length.toLocaleString("tr-TR")}
+                  </span>
+                  <span className="text-sm font-semibold text-[#4B5563]">Aktif cari</span>
+                </div>
+                <p className="mt-1 flex items-center gap-1.5 text-xs font-bold text-[#8D5B28]">
+                  <span className="h-2 w-2 rounded-full bg-[#8D5B28]" />
+                  {initialCustomers.filter((customer) => customer.kalan_bakiye > 0).length} müşteride açık bakiye mevcut
+                </p>
+              </div>
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#E5E0D8] bg-[#FAF8F5] text-[#2D4C3A]">
+                <Users className="h-5 w-5" />
+              </div>
+            </div>
+            <p className="mt-4 text-xs font-semibold text-[#2D4C3A]">Tüm müşterileri görüntüle →</p>
+          </Link>
 
-          {/* 2. Günlük Hasılat & Kasa Akışı */}
-          <section>
-            <RecentActivities
-              dailyRevenues={initialStats.gunlukHasilatGecmisi || []}
-              selectedDate={selectedDate}
-              selectedRevenue={selectedRevenue}
-              selectedCount={selectedCount}
-              todayStr={todayStr}
-              onSelectDate={setSelectedDate}
-              enCokBorclular={initialStats.enCokBorclular}
-              onOpenStatement={handleOpenStatement}
-            />
+          <section className="rounded-2xl border border-[#E5E0D8] bg-white p-6 shadow-[0_1px_3px_rgba(0,0,0,0.03)]">
+            <h1 className="text-xl font-bold text-[#2D4C3A]">Ana Sayfa</h1>
+            <p className="mt-1 text-sm text-[#6B776D]">
+              Kasa ve cari özetlerine Raporlar bölümünden, tüm müşteri kayıtlarına Müşteriler bölümünden ulaşabilirsiniz.
+            </p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Link
+                href="/raporlar"
+                className="rounded-full bg-[#2D4C3A] px-4 py-2 text-sm font-semibold text-white hover:bg-[#1E3427]"
+              >
+                Raporları Aç
+              </Link>
+              <Link
+                href="/musteriler"
+                className="rounded-full border border-[#D1D5DB] bg-white px-4 py-2 text-sm font-semibold text-[#2D4C3A] hover:bg-[#F4EFEA]"
+              >
+                Müşterileri Gör
+              </Link>
+            </div>
           </section>
-
         </main>
 
         {/* Footer */}
@@ -269,6 +221,5 @@ export default function DashboardClient({
           onClose={() => setFirmaDebtOpen(false)}
         />
       </div>
-    </PrivacyProvider>
   );
 }

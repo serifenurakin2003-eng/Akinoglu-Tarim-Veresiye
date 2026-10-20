@@ -1,9 +1,9 @@
 "use client";
 
-import { CalendarDays, ChevronRight, Scale, CheckCircle2, Calendar } from "lucide-react";
+import { CalendarDays, ChevronRight, CheckCircle2, Calendar } from "lucide-react";
 import { formatCurrency, formatDateTurkish } from "@/components/StatCards";
-import { usePrivacy } from "@/lib/privacy";
 import { DailyRevenueItem } from "@/lib/actions";
+import Link from "next/link";
 
 interface RecentActivitiesProps {
   dailyRevenues: DailyRevenueItem[];
@@ -18,7 +18,6 @@ interface RecentActivitiesProps {
     mahalle: string | null;
     bakiye: number;
   }[];
-  onOpenStatement: (customerId: number) => void;
 }
 
 export default function RecentActivities({
@@ -29,9 +28,7 @@ export default function RecentActivities({
   todayStr,
   onSelectDate,
   enCokBorclular,
-  onOpenStatement,
 }: RecentActivitiesProps) {
-  const { isPrivacyMode } = usePrivacy();
   const isToday = selectedDate === todayStr;
 
   return (
@@ -52,6 +49,7 @@ export default function RecentActivities({
                   Tarih tarih toplanan nakit ve banka tahsilat dökümü
                 </p>
               </div>
+
             </div>
             <span className="text-xs font-bold text-[#2D4C3A] bg-[#EEF4F0] px-3 py-1 rounded-full border border-[#D0E0D4]">
               Tarih Bazlı Kasa
@@ -78,7 +76,7 @@ export default function RecentActivities({
                 O Günün Hasılatı
               </span>
               <p className="text-base sm:text-lg font-extrabold text-[#2D4C3A] tabular-nums">
-                {isPrivacyMode ? "•••••• ₺" : formatCurrency(selectedRevenue)}
+                {formatCurrency(selectedRevenue)}
               </p>
               <p className="text-[10px] text-[#4B5563] font-medium">
                 {selectedCount > 0 ? `${selectedCount} tahsilat kaydı` : "Kayıt yok"}
@@ -133,7 +131,7 @@ export default function RecentActivities({
 
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-extrabold tabular-nums text-[#2D4C3A]">
-                          {isPrivacyMode ? "•••••• ₺" : formatCurrency(item.toplamHasilat)}
+                          {formatCurrency(item.toplamHasilat)}
                         </span>
                         <ChevronRight
                           className={`h-4 w-4 transition-transform group-hover:translate-x-0.5 ${
@@ -154,72 +152,48 @@ export default function RecentActivities({
         </p>
       </div>
 
-      {/* 2. En Yüksek Açık Hesaplar (Tahsilat Bekleyenler) */}
-      <div className="rounded-2xl border border-[#E5E0D8] bg-white p-6 shadow-[0_1px_3px_rgba(0,0,0,0.03)] flex flex-col justify-between">
-        <div>
-          <div className="flex items-center justify-between pb-4 border-b border-[#E5E0D8]">
-            <div className="flex items-center gap-2.5">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#FAF3EB] text-[#8D5B28] border border-[#E8DCCB]">
-                <Scale className="h-4 w-4" />
-              </div>
-              <div>
-                <h3 className="text-lg font-bold text-[#1F2937]">
-                  En Yüksek Açık Hesaplar
-                </h3>
-                <p className="text-xs font-medium text-[#4B5563]">
-                  En çok vadeli tohum, gübre ve ilaç borcu olan müstahsiller
-                </p>
-              </div>
-            </div>
-            <span className="text-xs font-semibold text-[#4B5563]">İlk 5 Hesap</span>
+      <div className="rounded-2xl border border-[#E5E0D8] bg-white p-6 shadow-[0_1px_3px_rgba(0,0,0,0.03)]">
+        <div className="flex items-center justify-between border-b border-[#E5E0D8] pb-4">
+          <div>
+            <h3 className="text-lg font-bold text-[#1F2937]">En Yüksek Açık Hesaplar</h3>
+            <p className="text-xs font-medium text-[#4B5563]">Açık borcu en yüksek ilk 5 müşteri</p>
           </div>
-
-          <div className="mt-4 divide-y divide-[#E5E0D8]">
-            {enCokBorclular.length === 0 ? (
-              <p className="py-10 text-center text-xs font-medium text-[#6B7280]">
-                Açık bakiyeli hesap bulunmuyor.
-              </p>
-            ) : (
-              enCokBorclular.map((m, index) => (
-                <div
-                  key={m.musteri_id}
-                  onClick={() => onOpenStatement(m.musteri_id)}
-                  title="Müşteri Bilgilerini ve Ekstresini Aç"
-                  className="flex items-center justify-between py-3.5 px-2.5 -mx-2.5 rounded-xl hover:bg-[#F3EFEA] transition-colors cursor-pointer group"
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-bold text-[#8D5B28]">
-                      {index + 1}
-                    </span>
-                    <div>
-                      <h4 className="text-sm font-bold text-[#111827] group-hover:text-[#2D4C3A] transition-colors">
-                        {m.ad_soyad}
-                      </h4>
-                      {m.mahalle && (
-                        <p className="text-xs font-medium text-[#8D5B28]">{m.mahalle}</p>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <div className="text-right">
-                      <span className="text-sm font-bold text-[#8D5B28] tabular-nums">
-                        {isPrivacyMode ? "•••••• ₺" : formatCurrency(m.bakiye)}
-                      </span>
-                      <span className="block text-[10px] text-[#6B7280]">kalan borç</span>
-                    </div>
-                    <ChevronRight className="h-4 w-4 text-[#9CA3AF] transition-transform group-hover:translate-x-0.5" />
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
+          <span className="text-xs font-semibold text-[#4B5563]">İlk 5 Hesap</span>
         </div>
 
-        <p className="mt-3 text-[11px] text-[#6B7280] text-center italic border-t border-[#E5E0D8]/60 pt-2">
-          Müşteri bilgilerini ve detaylı tahsilatlarını görmek için satıra tıklayınız.
-        </p>
+        <div className="mt-4 divide-y divide-[#E5E0D8]">
+          {enCokBorclular.length === 0 ? (
+            <p className="py-10 text-center text-xs font-medium text-[#6B7280]">
+              Açık bakiyeli hesap bulunmuyor.
+            </p>
+          ) : (
+            enCokBorclular.map((m, index) => (
+              <Link
+                key={m.musteri_id}
+                href={`/musteriler?musteriId=${m.musteri_id}`}
+                className="flex items-center justify-between rounded-xl px-2.5 py-3.5 transition-colors hover:bg-[#F3EFEA]"
+              >
+                <div className="flex items-center gap-3">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-full border border-[#E5E0D8] bg-[#FAF8F5] text-xs font-bold text-[#8D5B28]">
+                    {index + 1}
+                  </span>
+                  <div>
+                    <h4 className="text-sm font-bold text-[#111827]">{m.ad_soyad}</h4>
+                    {m.mahalle && <p className="text-xs font-medium text-[#8D5B28]">{m.mahalle}</p>}
+                  </div>
+                </div>
+                <div className="text-right">
+                  <span className="text-sm font-bold tabular-nums text-[#8D5B28]">
+                    {formatCurrency(m.bakiye)}
+                  </span>
+                  <span className="block text-[10px] text-[#6B7280]">kalan borç</span>
+                </div>
+              </Link>
+            ))
+          )}
+        </div>
       </div>
+
     </div>
   );
 }

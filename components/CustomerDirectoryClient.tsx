@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useState } from "react";
 import CustomerTable from "@/components/CustomerTable";
 import Navbar from "@/components/Navbar";
@@ -11,13 +12,13 @@ import ProductCatalogModal from "@/components/modals/ProductCatalogModal";
 import StatementModal from "@/components/modals/StatementModal";
 import TransactionModal from "@/components/modals/TransactionModal";
 import { CustomerWithBalance, deleteCustomer, ProductItem } from "@/lib/actions";
-import { PrivacyProvider } from "@/lib/privacy";
 
 interface CustomerDirectoryClientProps {
   customers: CustomerWithBalance[];
   neighborhoods: string[];
   products: ProductItem[];
   currentUser?: { name?: string; username?: string } | null;
+  initialSelectedCustomerId?: number | null;
 }
 
 export default function CustomerDirectoryClient({
@@ -25,14 +26,15 @@ export default function CustomerDirectoryClient({
   neighborhoods,
   products,
   currentUser,
+  initialSelectedCustomerId = null,
 }: CustomerDirectoryClientProps) {
   const router = useRouter();
   const [customerModalOpen, setCustomerModalOpen] = useState(false);
   const [transactionModalOpen, setTransactionModalOpen] = useState(false);
   const [transactionType, setTransactionType] = useState<"borc" | "tahsilat">("borc");
   const [preSelectedCustomerId, setPreSelectedCustomerId] = useState<number | null>(null);
-  const [statementCustomerId, setStatementCustomerId] = useState<number | null>(null);
-  const [statementModalOpen, setStatementModalOpen] = useState(false);
+  const [statementCustomerId, setStatementCustomerId] = useState<number | null>(initialSelectedCustomerId);
+  const [statementModalOpen, setStatementModalOpen] = useState(Boolean(initialSelectedCustomerId));
   const [productCatalogOpen, setProductCatalogOpen] = useState(false);
   const [firmaDebtOpen, setFirmaDebtOpen] = useState(false);
   const [passwordModalOpen, setPasswordModalOpen] = useState(false);
@@ -82,7 +84,6 @@ export default function CustomerDirectoryClient({
   }
 
   return (
-    <PrivacyProvider>
       <div className="min-h-screen bg-[#FAF8F5] text-[#1F2922]">
         <Navbar
           onOpenNewCustomer={() => setCustomerModalOpen(true)}
@@ -94,9 +95,17 @@ export default function CustomerDirectoryClient({
         />
 
         <main className="mx-auto max-w-7xl space-y-5 px-4 py-8 sm:px-6 lg:px-8">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight text-[#2D4C3A]">Müşteriler</h1>
-            <p className="mt-1 text-sm text-[#6B776D]">Kayıtlı tüm müşterilere buradan ulaşabilirsiniz.</p>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight text-[#2D4C3A]">Müşteriler</h1>
+              <p className="mt-1 text-sm text-[#6B776D]">Kayıtlı tüm müşterilere buradan ulaşabilirsiniz.</p>
+            </div>
+            <Link
+              href="/"
+              className="rounded-full border border-[#D1D5DB] bg-white px-4 py-2 text-sm font-semibold text-[#2D4C3A] transition hover:border-[#2D4C3A] hover:bg-[#F4EFEA]"
+            >
+              Ana Sayfa
+            </Link>
           </div>
           <CustomerTable
             customers={customers}
@@ -153,6 +162,5 @@ export default function CustomerDirectoryClient({
         />
         <FirmaDebtModal isOpen={firmaDebtOpen} onClose={() => setFirmaDebtOpen(false)} />
       </div>
-    </PrivacyProvider>
   );
 }

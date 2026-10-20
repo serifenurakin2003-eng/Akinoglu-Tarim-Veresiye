@@ -9,7 +9,17 @@ export const metadata: Metadata = {
   description: "Tüm müşteri kayıtları ve cari hesapları",
 };
 
-export default async function MusterilerPage() {
+export default async function MusterilerPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ musteriId?: string }>;
+}) {
+  const params = await searchParams;
+  const parsedCustomerId = Number(params.musteriId);
+  const initialSelectedCustomerId =
+    Number.isInteger(parsedCustomerId) && parsedCustomerId > 0
+      ? parsedCustomerId
+      : null;
   const [customers, neighborhoods, products, currentUser] = await Promise.all([
     getCustomers(),
     getNeighborhoods(),
@@ -23,6 +33,7 @@ export default async function MusterilerPage() {
       neighborhoods={neighborhoods}
       products={products}
       currentUser={currentUser}
+      initialSelectedCustomerId={initialSelectedCustomerId}
     />
   );
 }

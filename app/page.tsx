@@ -1,5 +1,4 @@
 import {
-  getDashboardStats,
   getCustomers,
   getCurrentUser,
   getProducts,
@@ -35,9 +34,8 @@ async function withRetry<T>(fn: () => Promise<T>, retries = 2): Promise<T> {
 }
 
 export default async function Home() {
-  const [stats, customers, currentUser, products] = await withRetry(() =>
+  const [customers, currentUser, products] = await withRetry(() =>
     Promise.all([
-      getDashboardStats(),
       getCustomers(),
       getCurrentUser(),
       getProducts(),
@@ -46,7 +44,6 @@ export default async function Home() {
 
   return (
     <DashboardClient
-      initialStats={stats}
       initialCustomers={customers}
       initialProducts={products}
       currentUser={currentUser}

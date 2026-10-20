@@ -9,13 +9,11 @@ import {
   LogOut,
   User,
   Package,
-  Eye,
-  EyeOff,
   Building2,
   Users,
+  BarChart3,
 } from "lucide-react";
 import { logoutAction } from "@/lib/actions";
-import { usePrivacy } from "@/lib/privacy";
 
 interface NavbarProps {
   onOpenNewCustomer: () => void;
@@ -34,8 +32,6 @@ export default function Navbar({
   onOpenFirmaDebt,
   currentUser,
 }: NavbarProps) {
-  const { isPrivacyMode, togglePrivacyMode } = usePrivacy();
-
   const todayFormatted = new Intl.DateTimeFormat("tr-TR", {
     day: "numeric",
     month: "long",
@@ -72,34 +68,6 @@ export default function Navbar({
 
         {/* Action Buttons */}
         <div className="flex items-center gap-1.5 sm:gap-2.5">
-          {/* Mahremiyet / Gizlilik Modu (Ses kaydı isteği: 'Borcu çok büyük gözükmesin ortada, millet bakacak olur') */}
-          <button
-            onClick={togglePrivacyMode}
-            type="button"
-            title={
-              isPrivacyMode
-                ? "Mahremiyet Modu Açık (Borçlar Gizli). Göstermek için tıklayın."
-                : "Mahremiyet Modu: Borç tutarlarını meraklı gözlerden gizle"
-            }
-            className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
-              isPrivacyMode
-                ? "bg-amber-100 border-amber-300 text-amber-900 shadow-inner"
-                : "bg-white border-[#D1D5DB] text-[#4B5563] hover:bg-[#FAF8F5] hover:text-[#1F2922]"
-            }`}
-          >
-            {isPrivacyMode ? (
-              <>
-                <EyeOff className="h-4 w-4 text-amber-700" />
-                <span className="hidden md:inline">Borçlar Gizli</span>
-              </>
-            ) : (
-              <>
-                <Eye className="h-4 w-4 text-[#6B7280]" />
-                <span className="hidden md:inline">Gizlilik Modu</span>
-              </>
-            )}
-          </button>
-
           {/* Ürün & Fiyat Kataloğu Butonu (Ses kaydı isteği: 'İlaçlar gübreler diye bir altyapı olacak') */}
           <button
             onClick={onOpenProductCatalog}
@@ -131,6 +99,16 @@ export default function Navbar({
           >
             <Users className="h-4 w-4 text-[#6F8B67] transition-transform group-hover:scale-110" />
             <span className="hidden lg:inline">Müşteriler</span>
+          </Link>
+
+          {/* Raporlar */}
+          <Link
+            href="/raporlar"
+            title="Günlük Hasılat ve Açık Hesap Raporları"
+            className="group inline-flex items-center gap-1.5 rounded-full border border-[#D1D5DB] bg-white px-3 sm:px-3.5 py-1.5 text-xs sm:text-sm font-semibold text-[#1F2937] transition hover:border-[#2D4C3A] hover:bg-[#F4EFEA] hover:text-[#2D4C3A]"
+          >
+            <BarChart3 className="h-4 w-4 text-[#6F8B67] transition-transform group-hover:scale-110" />
+            <span className="hidden sm:inline">Raporlar</span>
           </Link>
 
           {/* Yeni Müşteri */}

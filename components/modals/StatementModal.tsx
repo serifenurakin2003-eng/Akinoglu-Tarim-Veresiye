@@ -25,7 +25,6 @@ import {
   CustomerStatement,
 } from "@/lib/actions";
 import { formatCurrency } from "@/components/StatCards";
-import { usePrivacy } from "@/lib/privacy";
 
 interface StatementModalProps {
   isOpen: boolean;
@@ -46,7 +45,6 @@ export default function StatementModal({
   onDataChanged,
   requirePassword,
 }: StatementModalProps) {
-  const { isPrivacyMode } = usePrivacy();
   const [statement, setStatement] = useState<CustomerStatement | null>(null);
   const [loading, setLoading] = useState(false);
   const [deletingKey, setDeletingKey] = useState<string | null>(null);
@@ -194,7 +192,7 @@ export default function StatementModal({
                   Toplam Verilen Borç
                 </p>
                 <p className="font-serif-brand text-lg sm:text-xl font-bold text-[#8D5B28] tabular-nums mt-0.5">
-                  {isPrivacyMode ? "•••••• ₺" : formatCurrency(statement.musteri.toplam_borc)}
+                  {formatCurrency(statement.musteri.toplam_borc)}
                 </p>
                 <p className="text-[10px] text-[#6B776D]">Aldığı ürünlerin toplamı</p>
               </div>
@@ -205,7 +203,7 @@ export default function StatementModal({
                   Müşterinin Verdiği (Tahsilat)
                 </p>
                 <p className="font-serif-brand text-lg sm:text-xl font-extrabold text-[#2D4C3A] tabular-nums mt-0.5">
-                  {isPrivacyMode ? "•••••• ₺" : formatCurrency(statement.musteri.toplam_tahsilat)}
+                  {formatCurrency(statement.musteri.toplam_tahsilat)}
                 </p>
                 <p className="text-[10px] text-[#2D4C3A]/80 font-medium">Bugüne kadar yaptığı tüm ödemeler</p>
               </div>
@@ -216,7 +214,7 @@ export default function StatementModal({
                   Kalan Net Borç
                 </p>
                 <p className="font-serif-brand text-lg sm:text-xl font-extrabold text-[#1F2922] tabular-nums mt-0.5">
-                  {isPrivacyMode ? "•••••• ₺" : formatCurrency(statement.musteri.kalan_bakiye)}
+                  {formatCurrency(statement.musteri.kalan_bakiye)}
                 </p>
                 <p className="text-[10px] text-[#6B776D]">Açıkta kalan bakiye</p>
               </div>
@@ -353,7 +351,7 @@ export default function StatementModal({
                             }`}
                           >
                             {isDebt ? "+" : "-"}
-                            {isPrivacyMode ? "•••••• ₺" : formatCurrency(item.tutar)}
+                            {formatCurrency(item.tutar)}
                           </td>
 
                           {/* İptal */}
@@ -408,18 +406,14 @@ export default function StatementModal({
                                           {kalem.miktar} {kalem.birim || "Adet"}
                                         </td>
                                         <td className="py-1.5 px-3 text-right font-medium text-[#4B5563] tabular-nums">
-                                          {isPrivacyMode
-                                            ? "•••••• ₺"
-                                            : `${kalem.birim_fiyat.toLocaleString("tr-TR", {
-                                                minimumFractionDigits: 2,
-                                              })} ₺`}
+                                          {`${kalem.birim_fiyat.toLocaleString("tr-TR", {
+                                            minimumFractionDigits: 2,
+                                          })} ₺`}
                                         </td>
                                         <td className="py-1.5 px-3 text-right font-serif-brand font-bold text-[#8D5B28] tabular-nums">
-                                          {isPrivacyMode
-                                            ? "•••••• ₺"
-                                            : `${kalem.toplam_fiyat.toLocaleString("tr-TR", {
-                                                minimumFractionDigits: 2,
-                                              })} ₺`}
+                                          {`${kalem.toplam_fiyat.toLocaleString("tr-TR", {
+                                            minimumFractionDigits: 2,
+                                          })} ₺`}
                                         </td>
                                       </tr>
                                     ))}
