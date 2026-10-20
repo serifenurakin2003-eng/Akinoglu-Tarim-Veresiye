@@ -270,6 +270,27 @@ export default function TransactionModal({
       return;
     }
 
+    // Tahsilat tutarının borcu aşmaması kontrolü
+    if (!isDebt) {
+      const selectedCust = customers.find(
+        (c) => c.musteri_id === Number(selectedCustomerId)
+      );
+      if (selectedCust) {
+        if (selectedCust.kalan_bakiye <= 0) {
+          setError(
+            `"${selectedCust.ad_soyad}" isimli müşterinin ödenmesi gereken borcu bulunmamaktadır.`
+          );
+          return;
+        }
+        if (effectiveTotal > selectedCust.kalan_bakiye) {
+          setError(
+            `Tahsilat tutarı (${effectiveTotal.toLocaleString("tr-TR")} ₺), müşterinin kalan borcundan (${selectedCust.kalan_bakiye.toLocaleString("tr-TR")} ₺) fazla olamaz.`
+          );
+          return;
+        }
+      }
+    }
+
     // Kalemli borç kaydı kontrolü
     let preparedKalemler: DebtItemInput[] | undefined = undefined;
     if (isDebt && debtInputMode === "items") {
@@ -659,15 +680,45 @@ export default function TransactionModal({
           {/* 2. SEÇENEK VEYA TAHSİLAT: SERBEST TUTAR GİRİŞİ */}
           {(!isDebt || debtInputMode === "quick") && (
             <div>
-              <label className="block text-xs font-semibold text-[#1F2922]">
-                {isDebt ? "Borç Tutarı (TL)" : "Tahsil Edilen Tutar (TL)"}{" "}
-                <span className="text-[#8D5B28]">*</span>
-              </label>
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-semibold text-[#1F2922]">
+                  {isDebt ? "Borç Tutarı (TL)" : "Tahsil Edilen Tutar (TL)"}{" "}
+                  <span className="text-[#8D5B28]">*</span>
+                </label>
+                {!isDebt && selectedCustomerId && (
+                  (() => {
+                    const cust = customers.find((c) => c.musteri_id === Number(selectedCustomerId));
+                    if (!cust) return null;
+                    return (
+                      <div className="flex items-center gap-1.5 text-xs">
+                        <span className="text-[#6B7280]">Kalan Borç:</span>
+                        <strong className="text-red-700 font-bold">
+                          {cust.kalan_bakiye.toLocaleString("tr-TR", { minimumFractionDigits: 2 })} ₺
+                        </strong>
+                        {cust.kalan_bakiye > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => setDirectTutar(cust.kalan_bakiye.toString())}
+                            className="ml-1 text-[11px] font-bold text-[#2D4C3A] hover:underline"
+                          >
+                            (Tümünü Kapat)
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })()
+                )}
+              </div>
               <div className="relative mt-1">
                 <input
                   type="number"
                   step="0.01"
                   min="0.01"
+                  max={
+                    !isDebt && selectedCustomerId
+                      ? customers.find((c) => c.musteri_id === Number(selectedCustomerId))?.kalan_bakiye
+                      : undefined
+                  }
                   required
                   value={directTutar}
                   onChange={(e) => setDirectTutar(e.target.value)}

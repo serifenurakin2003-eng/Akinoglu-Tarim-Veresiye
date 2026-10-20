@@ -7,6 +7,7 @@ import {
   Users,
   Phone,
   ChevronRight,
+  Trash2,
 } from "lucide-react";
 import { CustomerWithBalance } from "@/lib/actions";
 
@@ -14,17 +15,14 @@ interface CustomerTableProps {
   customers: CustomerWithBalance[];
   neighborhoods: string[];
   onOpenStatement: (customerId: number) => void;
-  onOpenDebt: (customerId: number) => void;
-  onOpenPayment: (customerId: number) => void;
-  onEditCustomer: (customer: CustomerWithBalance) => void;
-  onDataChanged: () => void;
-  requirePassword: (label: string, action: () => void) => void;
+  onDeleteCustomer: (customer: CustomerWithBalance) => void;
 }
 
 export default function CustomerTable({
   customers,
   neighborhoods,
   onOpenStatement,
+  onDeleteCustomer,
 }: CustomerTableProps) {
   const [search, setSearch] = useState("");
   const [selectedNeighborhood, setSelectedNeighborhood] = useState("all");
@@ -104,12 +102,13 @@ export default function CustomerTable({
               <th className="px-5 py-4">Köy / Mahalle</th>
               <th className="px-5 py-4">Kayıt Tarihi</th>
               <th className="px-4 py-4 text-center">Hesap Detayı</th>
+              <th className="px-3 py-4 text-center">Sil</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[#E5E0D8]">
             {filteredCustomers.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-6 py-14 text-center text-[#4B5563]">
+                <td colSpan={7} className="px-6 py-14 text-center text-[#4B5563]">
                   <Users className="mx-auto h-8 w-8 text-[#9CA3AF]" />
                   <p className="mt-2 text-sm font-semibold">
                     Arama kriterine uygun cari kayıt bulunamadı.
@@ -180,6 +179,21 @@ export default function CustomerTable({
                       <ChevronRight className="h-3 w-3" />
                     </span>
                   </td>
+
+                  <td className="px-3 py-4 text-center">
+                    <button
+                      type="button"
+                      title={`${customer.ad_soyad} müşterisini sil`}
+                      aria-label={`${customer.ad_soyad} müşterisini sil`}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        onDeleteCustomer(customer);
+                      }}
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-red-200 bg-white text-red-600 transition hover:bg-red-50"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </td>
                 </tr>
               ))
             )}
@@ -227,6 +241,18 @@ export default function CustomerTable({
                 </div>
               </div>
 
+              <button
+                type="button"
+                title={`${customer.ad_soyad} müşterisini sil`}
+                aria-label={`${customer.ad_soyad} müşterisini sil`}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onDeleteCustomer(customer);
+                }}
+                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-red-200 bg-white text-red-600 transition hover:bg-red-50"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
               <ChevronRight className="h-5 w-5 text-[#9CA3AF] group-hover:text-[#2D4C3A] transition-colors flex-shrink-0" />
             </div>
           ))

@@ -445,6 +445,7 @@ export async function deleteCustomer(musteri_id: number) {
   });
 
   revalidatePath("/");
+  revalidatePath("/musteriler");
   return { success: true };
 }
 
@@ -636,6 +637,35 @@ export async function addCollection(data: {
   }
   if (!data.odenen_tutar || data.odenen_tutar <= 0) {
     throw new Error("Geçerli bir tahsilat tutarı giriniz.");
+  }
+
+  // Kalan borç kontrolü
+  const m = await prisma.musteriler.findUniqueOrThrow({
+    where: { musteri_id: data.musteri_id },
+    include: {
+      borclar: true,
+      tahsilatlar: true,
+    },
+  });
+
+  const toplam_borc = m.borclar.reduce(
+    (sum, b) => sum + Number(b.tutar || 0),
+    0
+  );
+  const toplam_tahsilat = m.tahsilatlar.reduce(
+    (sum, t) => sum + Number(t.odenen_tutar || 0),
+    0
+  );
+  const kalan_bakiye = Math.max(0, Number((toplam_borc - toplam_tahsilat).toFixed(2)));
+
+  if (kalan_bakiye <= 0) {
+    throw new Error(`"${m.ad_soyad}" isimli müşterinin ödenmesi gereken borcu bulunmamaktadır.`);
+  }
+
+  if (data.odenen_tutar > kalan_bakiye) {
+    throw new Error(
+      `Tahsilat tutarı (${data.odenen_tutar.toLocaleString("tr-TR")} ₺), müşterinin kalan borcundan (${kalan_bakiye.toLocaleString("tr-TR")} ₺) fazla olamaz.`
+    );
   }
 
   const record = await prisma.tahsilatlar.create({

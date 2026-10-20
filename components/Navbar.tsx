@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import BrandLogo from "@/components/BrandLogo";
 import {
   UserPlus,
@@ -11,6 +12,7 @@ import {
   Eye,
   EyeOff,
   Building2,
+  Users,
 } from "lucide-react";
 import { logoutAction } from "@/lib/actions";
 import { usePrivacy } from "@/lib/privacy";
@@ -45,9 +47,9 @@ export default function Navbar({
     <header className="sticky top-0 z-40 w-full border-b border-[#E5E0D8] bg-[#FAF8F5]/95 backdrop-blur-md">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-3 sm:px-6 lg:px-8 py-2.5 sm:py-3">
         {/* Brand Group with Prominent Logo */}
-        <div className="flex items-center gap-3 sm:gap-4">
+        <div className="flex items-start gap-3 sm:gap-4">
           <BrandLogo className="h-12 w-12 sm:h-16 sm:w-16 shrink-0 filter drop-shadow-xs" />
-          <div className="flex flex-col">
+          <div className="flex flex-col pt-0.5">
             <div className="flex flex-wrap items-baseline gap-2">
               <span className="font-serif-brand text-xl sm:text-3xl font-extrabold tracking-[0.08em] text-[#2D4C3A]">
                 AKINOĞLU TARIM
@@ -103,7 +105,7 @@ export default function Navbar({
             onClick={onOpenProductCatalog}
             type="button"
             title="Zirai İlaç & Gübre Kataloğu (Fiyat ve Kod Yönetimi)"
-            className="group inline-flex items-center gap-1.5 rounded-full border border-[#D1D5DB] bg-white px-3 sm:px-3.5 py-1.5 text-xs sm:text-sm font-semibold text-[#1F2937] transition hover:border-[#8D5B28] hover:bg-[#FAF3EB] hover:text-[#8D5B28]"
+            className="group inline-flex items-center gap-1.5 rounded-full border border-[#D1D5DB] bg-white px-3 sm:px-3.5 py-1.5 text-xs sm:text-sm font-semibold text-[#1F2937] transition hover:border-[#8D5B28] hover:bg-[#FAF3EB] hover:text-[#8D5B28] md:justify-start"
           >
             <Package className="h-4 w-4 text-[#8D5B28] transition-transform group-hover:scale-110" />
             <span className="hidden lg:inline">Ürün &amp; Fiyatlar</span>
@@ -111,21 +113,31 @@ export default function Navbar({
           </button>
 
           {/* Firma Borçları */}
-          <button
-            onClick={onOpenFirmaDebt}
-            type="button"
-            title="Firmanın Kendi Borçları (Tedarikçiye Ödenecekler)"
-            className="group inline-flex items-center gap-1.5 rounded-full border border-[#D1D5DB] bg-white px-3 sm:px-3.5 py-1.5 text-xs sm:text-sm font-semibold text-[#1F2937] transition hover:border-[#8D5B28] hover:bg-[#FAF3EB] hover:text-[#8D5B28]"
+          <Link
+            href="/tedarikciler"
+            title="Firma Borçları & Tedarikçi Takibi (Müşterilerdeki Gibi Detaylı Takip)"
+            className="group inline-flex items-center gap-1.5 rounded-full border border-[#D1D5DB] bg-white px-3 sm:px-3.5 py-1.5 text-xs sm:text-sm font-semibold text-[#1F2937] transition hover:border-[#8D5B28] hover:bg-[#FAF3EB] hover:text-[#8D5B28] md:justify-start"
           >
             <Building2 className="h-4 w-4 text-[#8D5B28] transition-transform group-hover:scale-110" />
             <span className="hidden lg:inline">Firma Borçları</span>
-          </button>
+            <span className="lg:hidden">Firmalar</span>
+          </Link>
+
+          {/* Müşteri Listesi */}
+          <Link
+            href="/musteriler"
+            title="Tüm Müşteriler"
+            className="group inline-flex items-center gap-1.5 rounded-full border border-[#D1D5DB] bg-white px-3 sm:px-3.5 py-1.5 text-xs sm:text-sm font-semibold text-[#1F2937] transition hover:border-[#2D4C3A] hover:bg-[#F4EFEA] hover:text-[#2D4C3A] md:justify-start"
+          >
+            <Users className="h-4 w-4 text-[#6F8B67] transition-transform group-hover:scale-110" />
+            <span className="hidden lg:inline">Müşteriler</span>
+          </Link>
 
           {/* Yeni Müşteri */}
           <button
             onClick={onOpenNewCustomer}
             type="button"
-            className="group inline-flex items-center gap-1.5 rounded-full border border-[#D1D5DB] bg-white px-3 sm:px-3.5 py-1.5 text-xs sm:text-sm font-semibold text-[#1F2937] transition hover:border-[#2D4C3A] hover:bg-[#F4EFEA] hover:text-[#2D4C3A]"
+            className="group inline-flex items-center gap-1.5 rounded-full border border-[#D1D5DB] bg-white px-3 sm:px-3.5 py-1.5 text-xs sm:text-sm font-semibold text-[#1F2937] transition hover:border-[#2D4C3A] hover:bg-[#F4EFEA] hover:text-[#2D4C3A] md:justify-start"
           >
             <UserPlus className="h-4 w-4 text-[#6F8B67] transition-transform group-hover:scale-110" />
             <span className="hidden sm:inline">Müşteri</span>
@@ -135,7 +147,7 @@ export default function Navbar({
           <button
             onClick={onOpenNewDebt}
             type="button"
-            className="inline-flex items-center gap-1.5 rounded-full border border-[#8D5B28] bg-[#8D5B28] px-3 sm:px-4 py-1.5 text-xs sm:text-sm font-semibold text-white transition hover:bg-[#72481F]"
+            className="inline-flex items-center gap-1.5 rounded-full border border-[#8D5B28] bg-[#8D5B28] px-3 sm:px-4 py-1.5 text-xs sm:text-sm font-semibold text-white transition hover:bg-[#72481F] md:justify-start"
           >
             <Plus className="h-4 w-4 stroke-[2.5]" />
             <span className="hidden sm:inline">Borç Yaz</span>
@@ -146,7 +158,7 @@ export default function Navbar({
           <button
             onClick={onOpenNewPayment}
             type="button"
-            className="inline-flex items-center gap-1.5 rounded-full border border-[#2D4C3A] bg-[#2D4C3A] px-3 sm:px-4 py-1.5 text-xs sm:text-sm font-semibold text-white transition hover:bg-[#1E3427]"
+            className="inline-flex items-center gap-1.5 rounded-full border border-[#2D4C3A] bg-[#2D4C3A] px-3 sm:px-4 py-1.5 text-xs sm:text-sm font-semibold text-white transition hover:bg-[#1E3427] md:justify-start"
           >
             <ArrowDownLeft className="h-4 w-4 stroke-[2.5] text-[#FAF8F5]" />
             <span className="hidden sm:inline">Tahsilat Al</span>

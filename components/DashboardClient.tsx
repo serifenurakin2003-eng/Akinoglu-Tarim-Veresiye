@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import StatCards from "@/components/StatCards";
 import RecentActivities from "@/components/RecentActivities";
-import CustomerTable from "@/components/CustomerTable";
 import CustomerModal from "@/components/modals/CustomerModal";
 import TransactionModal from "@/components/modals/TransactionModal";
 import StatementModal from "@/components/modals/StatementModal";
@@ -23,7 +22,6 @@ import { PrivacyProvider } from "@/lib/privacy";
 interface DashboardClientProps {
   initialStats: DashboardStats;
   initialCustomers: CustomerWithBalance[];
-  neighborhoods: string[];
   initialProducts?: ProductItem[];
   currentUser?: { name?: string; username?: string } | null;
 }
@@ -31,7 +29,6 @@ interface DashboardClientProps {
 export default function DashboardClient({
   initialStats,
   initialCustomers,
-  neighborhoods,
   initialProducts = [],
   currentUser,
 }: DashboardClientProps) {
@@ -102,8 +99,6 @@ export default function DashboardClient({
 
   // Modal States
   const [customerModalOpen, setCustomerModalOpen] = useState(false);
-  const [editingCustomer, setEditingCustomer] =
-    useState<CustomerWithBalance | null>(null);
 
   const [transactionModalOpen, setTransactionModalOpen] = useState(false);
   const [transactionType, setTransactionType] = useState<"borc" | "tahsilat">("borc");
@@ -149,7 +144,6 @@ export default function DashboardClient({
 
   // Navbar handlers — artık şifresiz doğrudan açılıyor
   function handleOpenNewCustomer() {
-    setEditingCustomer(null);
     setCustomerModalOpen(true);
   }
 
@@ -163,11 +157,6 @@ export default function DashboardClient({
     setTransactionType("tahsilat");
     setPreSelectedCustomerId(customerId ?? null);
     setTransactionModalOpen(true);
-  }
-
-  function handleEditCustomer(customer: CustomerWithBalance) {
-    setEditingCustomer(customer);
-    setCustomerModalOpen(true);
   }
 
   // Müşteri Bilgileri & Ekstre — şifresiz açılıyor (sadece görüntüleme)
@@ -221,19 +210,6 @@ export default function DashboardClient({
             />
           </section>
 
-          {/* 3. Customer Ledger Table */}
-          <section className="space-y-3">
-            <CustomerTable
-              customers={initialCustomers}
-              neighborhoods={neighborhoods}
-              onOpenStatement={handleOpenStatement}
-              onOpenDebt={handleOpenNewDebt}
-              onOpenPayment={handleOpenNewPayment}
-              onEditCustomer={handleEditCustomer}
-              onDataChanged={handleDataChanged}
-              requirePassword={requirePassword}
-            />
-          </section>
         </main>
 
         {/* Footer */}
@@ -258,7 +234,6 @@ export default function DashboardClient({
           isOpen={customerModalOpen}
           onClose={() => setCustomerModalOpen(false)}
           onSuccess={handleDataChanged}
-          customer={editingCustomer}
         />
 
         <TransactionModal

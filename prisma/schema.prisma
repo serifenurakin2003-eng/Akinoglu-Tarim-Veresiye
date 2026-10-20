@@ -71,3 +71,43 @@ model borc_kalemleri {
   borclar      borclar   @relation(fields: [borc_id], references: [borc_id], onDelete: Cascade, map: "fk_kalem_borc")
   urunler      urunler?  @relation(fields: [urun_id], references: [urun_id], onUpdate: SetNull, onDelete: SetNull, map: "fk_kalem_urun")
 }
+
+/// Tedarikçi firmalar — bizim borçlu olduğumuz firmalar
+model tedarikciler {
+  tedarikci_id    Int               @id @default(autoincrement())
+  firma_adi       String            @db.VarChar(150)
+  yetkili_kisi    String?           @db.VarChar(100)
+  telefon         String?           @db.VarChar(20)
+  adres           String?           @db.VarChar(255)
+  kayit_tarihi    DateTime?         @default(dbgenerated("CURRENT_DATE")) @db.Date
+  firma_borclari  firma_borclari[]
+  firma_odemeleri firma_odemeleri[]
+}
+
+/// Tedarikçi firmalardan aldığımız hizmet/ürün karşılığı oluşan borçlarımız
+model firma_borclari {
+  firma_borc_id Int          @id @default(autoincrement())
+  tedarikci_id  Int
+  tutar         Decimal      @db.Decimal(10, 2)
+  aciklama      String?      @db.VarChar(255)
+  tarih         DateTime?    @default(dbgenerated("CURRENT_DATE")) @db.Date
+  alacakli      String?      @db.VarChar(200)
+  odendi        Boolean?     @default(false)
+  olusturma_tarihi DateTime? @default(now()) @db.Timestamp(6)
+  tedarikciler  tedarikciler @relation(fields: [tedarikci_id], references: [tedarikci_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_firma_borc_tedarikci")
+
+  @@index([tedarikci_id], map: "idx_firma_borclari_tedarikci")
+}
+
+/// Tedarikçi firmalara yaptığımız ödemeler
+model firma_odemeleri {
+  firma_odeme_id Int          @id @default(autoincrement())
+  tedarikci_id   Int
+  odenen_tutar   Decimal      @db.Decimal(10, 2)
+  aciklama       String?      @db.VarChar(255)
+  tarih          DateTime?    @default(dbgenerated("CURRENT_DATE")) @db.Date
+  tedarikciler   tedarikciler @relation(fields: [tedarikci_id], references: [tedarikci_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_firma_odeme_tedarikci")
+
+  @@index([tedarikci_id], map: "idx_firma_odemeleri_tedarikci")
+}
+
