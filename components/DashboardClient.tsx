@@ -213,7 +213,6 @@ export default function DashboardClient({
           isOpen={productCatalogOpen}
           onClose={() => setProductCatalogOpen(false)}
           onProductsChanged={handleDataChanged}
-          requirePassword={requirePassword}
         />
 
         <FirmaDebtModal

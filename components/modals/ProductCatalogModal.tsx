@@ -25,7 +25,6 @@ interface ProductCatalogModalProps {
   isOpen: boolean;
   onClose: () => void;
   onProductsChanged?: () => void;
-  requirePassword: (label: string, action: () => void) => void;
 }
 
 const CATEGORIES = ["Tümü", "Zirai İlaç", "Gübre", "Tohum", "Fide", "Diğer"];
@@ -35,7 +34,6 @@ export default function ProductCatalogModal({
   isOpen,
   onClose,
   onProductsChanged,
-  requirePassword,
 }: ProductCatalogModalProps) {
   const [products, setProducts] = useState<ProductItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -159,20 +157,18 @@ export default function ProductCatalogModal({
 
   // Ürün Sil
   function handleDeleteProduct(product: ProductItem) {
-    requirePassword(`"${product.ad}" Ürünü Sil`, () => {
-      if (!confirm(`"${product.kod} - ${product.ad}" ürününü listeden silmek istediğinize emin misiniz?`)) {
-        return;
-      }
+    if (!confirm(`"${product.kod} - ${product.ad}" ürününü listeden silmek istediğinize emin misiniz?`)) {
+      return;
+    }
 
-      deleteProduct(product.urun_id)
-        .then(() => {
-          loadProducts();
-          onProductsChanged?.();
-        })
-        .catch((err: unknown) => {
-          alert(err instanceof Error ? err.message : "Ürün silinirken hata oluştu.");
-        });
-    });
+    deleteProduct(product.urun_id)
+      .then(() => {
+        loadProducts();
+        onProductsChanged?.();
+      })
+      .catch((err: unknown) => {
+        alert(err instanceof Error ? err.message : "Ürün silinirken hata oluştu.");
+      });
   }
 
   if (!isOpen) return null;

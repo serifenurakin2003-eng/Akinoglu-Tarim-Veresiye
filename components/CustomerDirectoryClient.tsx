@@ -158,7 +158,6 @@ export default function CustomerDirectoryClient({
           isOpen={productCatalogOpen}
           onClose={() => setProductCatalogOpen(false)}
           onProductsChanged={refreshData}
-          requirePassword={requirePassword}
         />
         <FirmaDebtModal isOpen={firmaDebtOpen} onClose={() => setFirmaDebtOpen(false)} />
       </div>
