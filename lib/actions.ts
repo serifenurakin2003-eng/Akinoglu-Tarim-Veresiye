@@ -828,34 +828,8 @@ export async function logoutAction(): Promise<void> {
 // ÜRÜN & İLAÇ & GÜBRE ALTYAPISI (SES KAYDI İSTEĞİ)
 // -------------------------------------------------------------
 
-const DEFAULT_SAMPLE_PRODUCTS = [
-  { kod: "01", ad: "Çil İlacı (Meyve & Bağ)", kategori: "Zirai İlaç", birim: "Litre", fiyat: 450 },
-  { kod: "02", ad: "Ot Zehiri (Geniş Yapraklı)", kategori: "Zirai İlaç", birim: "Litre", fiyat: 380 },
-  { kod: "03", ad: "Kurt Zehiri (Böcek İlacı)", kategori: "Zirai İlaç", birim: "Litre", fiyat: 520 },
-  { kod: "04", ad: "Taban Gübresi (20-20-0 Kompoze)", kategori: "Gübre", birim: "Torba", fiyat: 850 },
-  { kod: "05", ad: "Üre Gübresi (%46 Azot)", kategori: "Gübre", birim: "Torba", fiyat: 920 },
-  { kod: "06", ad: "Damlama Gübresi (18-18-18)", kategori: "Gübre", birim: "Torba", fiyat: 780 },
-  { kod: "07", ad: "Sertifikalı Buğday Tohumu", kategori: "Tohum", birim: "Torba", fiyat: 650 },
-  { kod: "08", ad: "Hibrit Domates Fidesi", kategori: "Fide", birim: "Adet", fiyat: 8.5 },
-];
-
 export async function getProducts(search?: string, kategori?: string): Promise<ProductItem[]> {
   try {
-    const count = await prisma.urunler.count();
-    if (count === 0) {
-      // İlk açılışta ses kaydında geçen örnek zirai ürünleri ekle
-      await prisma.urunler.createMany({
-        data: DEFAULT_SAMPLE_PRODUCTS.map((p) => ({
-          kod: p.kod,
-          ad: p.ad,
-          kategori: p.kategori,
-          birim: p.birim,
-          fiyat: p.fiyat,
-          aktif: true,
-        })),
-      });
-    }
-
     const whereClause: Record<string, unknown> = {
       aktif: true,
     };
@@ -1007,7 +981,8 @@ export async function deleteProduct(urun_id: number) {
   }
 
   revalidatePath("/");
-  return { success: true };
+  revalidatePath("/musteriler");
+  return { success: true, archived: kalemCount > 0 };
 }
 
 // 17. Belirli Bir Tarihe Ait Tahsilat Listesini Getirme

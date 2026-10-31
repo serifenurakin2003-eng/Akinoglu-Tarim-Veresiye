@@ -156,19 +156,18 @@ export default function ProductCatalogModal({
   }
 
   // Ürün Sil
-  function handleDeleteProduct(product: ProductItem) {
+  async function handleDeleteProduct(product: ProductItem) {
     if (!confirm(`"${product.kod} - ${product.ad}" ürününü listeden silmek istediğinize emin misiniz?`)) {
       return;
     }
 
-    deleteProduct(product.urun_id)
-      .then(() => {
-        loadProducts();
-        onProductsChanged?.();
-      })
-      .catch((err: unknown) => {
-        alert(err instanceof Error ? err.message : "Ürün silinirken hata oluştu.");
-      });
+    try {
+      await deleteProduct(product.urun_id);
+      await loadProducts();
+      onProductsChanged?.();
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : "Ürün silinirken hata oluştu.");
+    }
   }
 
   if (!isOpen) return null;
