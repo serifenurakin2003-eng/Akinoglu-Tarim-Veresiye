@@ -1,32 +1,75 @@
+import { createHmac, timingSafeEqual } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
-import { createHmac } from "crypto";
+import prisma from "@/lib/prisma";
 
 const COOKIE_NAME = "akinoglu_session";
 
-function verify(signed: string): boolean {
+interface SessionPayload {
+  id: number;
+  username: string;
+  name: string;
+}
+
+function verify(signed: string): SessionPayload | null {
   const secret = process.env.SESSION_SECRET || "fallback-secret-akinoglu-tarim-2024";
   const lastDot = signed.lastIndexOf(".");
-  if (lastDot === -1) return false;
+  if (lastDot === -1) return null;
+
   const encodedPayload = signed.slice(0, lastDot);
-  const signature = signed.slice(lastDot + 1);
+  const suppliedSignature = Buffer.from(signed.slice(lastDot + 1), "hex");
 
   try {
     const payload = Buffer.from(encodedPayload, "base64url").toString("utf-8");
     const hmac = createHmac("sha256", secret);
     hmac.update(payload);
-    const expectedSig = hmac.digest("hex");
-    if (signature === expectedSig) return true;
-  } catch {
-    // fallback
-  }
+    const expectedSignature = Buffer.from(hmac.digest("hex"), "hex");
 
-  // Eski tekil format desteği
-  const hmacOld = createHmac("sha256", secret);
-  hmacOld.update(encodedPayload);
-  return signature === hmacOld.digest("hex");
+    if (
+      suppliedSignature.length !== expectedSignature.length ||
+      !timingSafeEqual(suppliedSignature, expectedSignature)
+    ) {
+      return null;
+    }
+
+    const parsed = JSON.parse(payload) as Partial<SessionPayload>;
+    if (
+      !Number.isInteger(parsed.id) ||
+      (parsed.id ?? 0) <= 0 ||
+      typeof parsed.username !== "string" ||
+      !parsed.username
+    ) {
+      return null;
+    }
+
+    return {
+      id: parsed.id as number,
+      username: parsed.username,
+      name: typeof parsed.name === "string" ? parsed.name : "",
+    };
+  } catch {
+    return null;
+  }
 }
 
-export function proxy(request: NextRequest) {
+async function hasActiveUser(session: SessionPayload | null): Promise<boolean> {
+  if (!session) return false;
+
+  try {
+    const user = await prisma.kullanicilar.findFirst({
+      where: {
+        kullanici_id: session.id,
+        kullanici_adi: session.username,
+      },
+      select: { kullanici_id: true },
+    });
+    return Boolean(user);
+  } catch {
+    // Fail closed if the account table cannot be checked.
+    return false;
+  }
+}
+
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Statik varlıklara her zaman izin ver
@@ -38,11 +81,10 @@ export function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Cookie kontrolü
   const raw = request.cookies.get(COOKIE_NAME)?.value;
-  const isAuthenticated = raw ? verify(raw) : false;
+  const session = raw ? verify(raw) : null;
+  const isAuthenticated = await hasActiveUser(session);
 
-  // Login sayfası kontrolü
   if (pathname.startsWith("/login")) {
     if (isAuthenticated) {
       return NextResponse.redirect(new URL("/", request.url));
@@ -50,10 +92,8 @@ export function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Diğer tüm sayfalar için giriş kontrolü
   if (!isAuthenticated) {
-    const loginUrl = new URL("/login", request.url);
-    return NextResponse.redirect(loginUrl);
+    return NextResponse.redirect(new URL("/login", request.url));
   }
 
   return NextResponse.next();
@@ -64,4 +104,3 @@ export default proxy;
 export const config = {
   matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
 };
-

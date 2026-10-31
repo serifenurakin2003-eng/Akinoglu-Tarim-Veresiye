@@ -57,10 +57,7 @@ export async function getSessionUser(): Promise<SessionUser | null> {
       return parsed as SessionUser;
     }
   } catch {
-    // Eski basit format desteği ("authenticated")
-    if (verified === "authenticated") {
-      return { id: 0, username: "kullanici", name: "Kullanıcı" };
-    }
+    return null;
   }
   return null;
 }

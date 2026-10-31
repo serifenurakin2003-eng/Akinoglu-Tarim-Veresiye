@@ -3,7 +3,7 @@
 import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { createSession, destroySession, getSessionUser, type SessionUser } from "@/lib/session";
-import { hashPassword, verifyPassword } from "@/lib/auth";
+import { verifyPassword } from "@/lib/auth";
 import { redirect } from "next/navigation";
 
 export interface CustomerWithBalance {
@@ -711,63 +711,6 @@ async function ensureUserTable() {
   } catch (err) {
     console.error("Error creating kullanicilar table:", err);
   }
-}
-
-// Kayıt Ol
-export async function registerAction(data: {
-  ad_soyad: string;
-  kullanici_adi: string;
-  sifre: string;
-}): Promise<{ ok: boolean; error?: string }> {
-  const ad_soyad = data.ad_soyad?.trim();
-  const kullanici_adi = data.kullanici_adi?.trim();
-  const sifre = data.sifre;
-
-  if (!ad_soyad || ad_soyad.length < 2) {
-    return { ok: false, error: "Ad Soyad en az 2 karakter olmalıdır." };
-  }
-  if (!kullanici_adi || kullanici_adi.length < 3) {
-    return { ok: false, error: "Kullanıcı adı en az 3 karakter olmalıdır." };
-  }
-  if (!/^[\p{L}\p{N}._-]+$/u.test(kullanici_adi)) {
-    return { ok: false, error: "Kullanıcı adı sadece harf, rakam, nokta ve alt tire içerebilir." };
-  }
-  if (!sifre || sifre.length < 4) {
-    return { ok: false, error: "Şifre en az 4 karakter olmalıdır." };
-  }
-
-  await ensureUserTable();
-
-  try {
-    const existing = await prisma.$queryRawUnsafe<any[]>(
-      `SELECT kullanici_id FROM kullanicilar WHERE LOWER(kullanici_adi) = LOWER($1) LIMIT 1`,
-      kullanici_adi
-    );
-
-    if (existing && existing.length > 0) {
-      return { ok: false, error: "Bu kullanıcı adı zaten alınmış. Farklı bir kullanıcı adı seçiniz." };
-    }
-
-    const hashed = hashPassword(sifre);
-    const created = await prisma.$queryRawUnsafe<any[]>(
-      `INSERT INTO kullanicilar (ad_soyad, kullanici_adi, sifre_hash) VALUES ($1, $2, $3) RETURNING kullanici_id, ad_soyad, kullanici_adi`,
-      ad_soyad,
-      kullanici_adi,
-      hashed
-    );
-
-    const user = created[0];
-    await createSession({
-      id: user.kullanici_id,
-      username: user.kullanici_adi,
-      name: user.ad_soyad,
-    });
-  } catch (err: any) {
-    console.error("registerAction error:", err);
-    return { ok: false, error: "Kayıt sırasında bir hata oluştu. Lütfen tekrar deneyiniz." };
-  }
-
-  redirect("/");
 }
 
 // Giriş Yap
